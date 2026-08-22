@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit secrets to Git)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Production Build Outputs
+dist/
+dist-ssr/
+
+# Local data cache
+server/data/*.json
+!server/data/.gitkeep
+
+# Scratch development / test artifacts
+scratch/
+
+# Logs & System Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+.DS_Store
+Thumbs.db
+.vercel

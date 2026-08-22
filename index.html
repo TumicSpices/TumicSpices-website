@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tumic Spices | Asli Masala, Tumic Wala | Pure Handcrafted Spices</title>
+  <meta name="description" content="Shop Tumic Spices' 100% pure range: Chilli Powder, Garam Masala, Biryani Masala, Haldi, Coriander & Aachar Masala. Milled for authentic Indian cooking. Shipped fresh from Kanpur.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌶️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <div class="announcement-bar">
+    <div class="container announcement-inner">
+      <div class="announcement-item">
+        <span>🌶️ Authentic Masalas • Packed Fresh • Delivered to Your Door</span>
+      </div>
+      <div class="announcement-item desktop-action">
+        <span>💬</span>
+        <span>WhatsApp Orders: <a href="https://wa.me/918604446189" target="_blank" class="announcement-link">+91 86044 46189</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimalist Header (Desktop & Mobile) -->
+  <header id="main-header" class="site-header">
+    <div class="container header-inner">
+      
+      <!-- Mobile Hamburger Button (Left on mobile) -->
+      <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Open Navigation Menu">
+        <span>☰</span>
+      </button>
+
+      <!-- Official Brand Logo (Center on mobile, Left on desktop) -->
+      <a href="#" class="brand-logo" id="brand-logo" aria-label="Tumic Spices Home">
+        <picture>
+          <source srcset="/assets/tumic-logo.webp" type="image/webp">
+          <img src="/assets/tumic-logo.png" alt="Tumic Spices - Crafted for the Perfect Taste" class="brand-logo-img" width="170" height="58" fetchpriority="high" decoding="async">
+        </picture>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="header-nav" aria-label="Main Navigation">
+        <a href="#products-catalog" class="nav-link">Shop All</a>
+        <a href="#combos-section" class="nav-link">Combos</a>
+        <a href="#kitchen-section" class="nav-link">Made For Kitchen</a>
+        <a href="#recipes-section" class="nav-link">Recipes</a>
+        <a href="#heritage-section" class="nav-link">Our Story</a>
+      </nav>
+
+      <!-- Header Actions (Right) -->
+      <div class="header-actions">
+        <!-- Order Tracking Button -->
+        <button id="nav-track-btn" class="btn-header-icon desktop-action" aria-label="Track Order Status" title="Track Your Order Status">
+          <span>📦</span>
+        </button>
+
+        <!-- WhatsApp Direct Chat Link -->
+        <a href="https://wa.me/918604446189?text=Hi%20Tumic%20Spices%2C%20I%20have%20an%20inquiry" target="_blank" class="btn-header-icon desktop-action" aria-label="WhatsApp Support" title="Chat on WhatsApp (+91 86044 46189)">
+          <span style="color: #25D366;">💬</span>
+        </a>
+
+        <!-- Shopping Bag / Cart Drawer Button -->
+        <button id="cart-drawer-toggle" class="btn-header-icon cart-icon-btn" aria-label="Open Shopping Bag" title="View Shopping Bag">
+          <span>🛒</span>
+          <span id="cart-count-badge" class="cart-count-badge">0</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Mobile Menu Drawer Overlay -->
+  <div id="mobile-menu-overlay" class="drawer-overlay"></div>
+  
+  <!-- Mobile Navigation Drawer -->
+  <aside id="mobile-menu-drawer" class="mobile-drawer" aria-label="Mobile Navigation Menu">
+    <div class="mobile-drawer-header">
+      <div class="drawer-brand-block">
+        <img src="/assets/tumic-logo.webp" alt="Tumic Spices" class="drawer-logo-img" width="145" height="50" decoding="async">
+      </div>
+      <button id="mobile-menu-close" class="drawer-close-btn" aria-label="Close Menu">✕</button>
+    </div>
+    
+    <div class="mobile-drawer-body">
+      <nav class="mobile-nav">
+        <a href="#products-catalog" class="mobile-nav-link">
+          <span>🌶️ All Spices</span>
+          <span>→</span>
+        </a>
+        <a href="#combos-section" class="mobile-nav-link">
+          <span>🎁 Value Combos</span>
+          <span>→</span>
+        </a>
+        <a href="#kitchen-section" class="mobile-nav-link">
+          <span>🍲 Made For Kitchen</span>
+          <span>→</span>
+        </a>
+        <a href="#recipes-section" class="mobile-nav-link">
+          <span>📖 Recipes</span>
+          <span>→</span>
+        </a>
+        <a href="#heritage-section" class="mobile-nav-link">
+          <span>✨ Our Story & Heritage</span>
+          <span>→</span>
+        </a>
+        <a href="#faq-section" class="mobile-nav-link">
+          <span>❓ FAQs</span>
+          <span>→</span>
+        </a>
+      </nav>
+
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+        <button id="mobile-nav-track-btn" class="btn btn-outline" style="width: 100%; justify-content: center;">
+          <span>📦 Track Order Status</span>
+        </button>
+        <a href="https://wa.me/918604446189?text=Hi%20Tumic%20Spices%2C%20I%20have%20an%20inquiry" target="_blank" class="btn btn-whatsapp" style="width: 100%; justify-content: center;">
+          <span>💬 Chat on WhatsApp</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       HERO BANNER (Clean Static FMCG E-Commerce)
+       ========================================================================== -->
+  <section class="hero-section">
+    <div class="container hero-grid">
+      
+      <!-- Left Content -->
+      <div class="hero-content">
+        <div class="hero-badge-pill">
+          <span>👑</span>
+          <span>100% PURE & SINGLE-ORIGIN SPICES</span>
+        </div>
+
+        <h1 class="hero-title">
+          Asli Masala, <span class="highlight-red">Tumic Wala.</span>
+        </h1>
+
+        <p class="hero-description">
+          Authentic flavours crafted for everyday Indian cooking. Slow-milled at low temperatures with zero artificial colors or fillers to preserve radiant color and rich aroma.
+        </p>
+
+        <div class="hero-ctas">
+          <a href="#products-catalog" class="btn btn-primary btn-lg">
+            <span>Shop Spices</span>
+            <span>→</span>
+          </a>
+          <a href="#combos-section" class="btn btn-secondary btn-lg">
+            <span>Explore Combos</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Visual (Optimized Eager-Loaded Hero Image) -->
+      <div class="hero-media-wrapper">
+        <div class="hero-img-box">
+          <img src="/assets/garam-masala.png" alt="Tumic Spices Royal Garam Masala" class="hero-main-img" width="360" height="280" fetchpriority="high" decoding="async">
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       CATEGORY VISUAL PILL NAVIGATION
+       ========================================================================== -->
+  <div class="container">
+    <div class="category-nav-bar">
+      <button class="cat-nav-pill active" data-filter="all">🌶️ All Spices (6)</button>
+      <button class="cat-nav-pill" data-filter="essentials">🌿 Everyday Essentials</button>
+      <button class="cat-nav-pill" data-filter="royal">👑 Royal Blends</button>
+      <button class="cat-nav-pill" data-filter="combos">🎁 Value Combos</button>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       PRODUCT CATALOGUE GRID (2-Column Mobile, 4-Column Desktop)
+       ========================================================================== -->
+  <section id="products-catalog" class="section">
+    <div class="container">
+      
+      <div class="section-header">
+        <span class="section-tag">AUTHENTIC CATALOGUE</span>
+        <h2 class="section-title">Our Handcrafted Spices</h2>
+        <p class="section-desc">
+          Single-origin whole spices slow-milled to lock in volatile essential oils. Available in 100g trial packs up to 1kg bulk family packs.
+        </p>
+      </div>
+
+      <!-- 2-Column Mobile / 4-Column Desktop Grid -->
+      <div class="products-catalogue-grid" id="main-products-grid">
+
+        <!-- Product 1: Chilli Powder -->
+        <div class="product-tile" data-product-key="chilli" data-category="essentials" data-name="Chilli Powder" data-hindi="लाल मिर्च पाउडर • High Capsaicin" data-price="45" data-mrp="60" data-discount="25%" data-img="/assets/chilli-powder.jpg">
+          <div class="product-tile-media">
+            <span class="tile-badge">🔥 BESTSELLER</span>
+            <img src="/assets/chilli-powder.jpg" alt="Tumic Chilli Powder" class="product-tile-img" width="280" height="280" loading="lazy" decoding="async">
+          </div>
+          <div class="product-tile-body">
+            <div class="tile-rating-row">
+              <span class="tile-rating">★ 4.9 (380+)</span>
+              <span class="tile-tag">100% Pure</span>
+            </div>
+            <h3 class="tile-title">Chilli Powder</h3>
+            <div class="tile-hindi">लाल मिर्च • Guntur Ruby Red</div>
+            <div class="tile-price-row">
+              <span class="tile-price">₹45</span>
+              <span class="tile-mrp">₹60</span>
+              <span class="tile-discount">25% OFF</span>
+            </div>
+            <button class="btn-tile-add btn-quick-add" data-product-key="chilli">
+              <span>+ Add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Product 2: Garam Masala -->
+        <div class="product-tile" data-product-key="garam" data-category="royal" data-name="Garam Masala (GRM)" data-hindi="शाही गरम मसाला • Whole Roasted" data-price="100" data-mrp="140" data-discount="28%" data-img="/assets/garam-masala.png">
+          <div class="product-tile-media">
+            <span class="tile-badge royal">👑 ROYAL BLEND</span>
+            <img src="/assets/garam-masala.png" alt="Tumic Garam Masala" class="product-tile-img" width="280" height="280" loading="lazy" decoding="async">
+          </div>
+          <div class="product-tile-body">
+            <div class="tile-rating-row">
+              <span class="tile-rating">★ 5.0 (210+)</span>
+              <span class="tile-tag">Whole Roasted</span>
+            </div>
+            <h3 class="tile-title">Garam Masala (GRM)</h3>
+            <div class="tile-hindi">शाही गरम मसाला • Rich Bouquet</div>
+            <div class="tile-price-row">
+              <span class="tile-price">₹100</span>
+              <span class="tile-mrp">₹140</span>
+              <span class="tile-discount">28% OFF</span>
+            </div>
+            <button class="btn-tile-add btn-quick-add" data-product-key="garam">
+              <span>+ Add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Product 3: Biryani Masala -->
+        <div class="product-tile" data-product-key="biryani" data-category="royal" data-name="Biryani Masala" data-hindi="बिरयानी मसाला • Royal Dum Aroma" data-price="130" data-mrp="175" data-discount="26%" data-img="/assets/biryani-masala.png">
+          <div class="product-tile-media">
+            <span class="tile-badge royal">✨ AWADHI DUM</span>
+            <img src="/assets/biryani-masala.png" alt="Tumic Biryani Masala" class="product-tile-img" width="280" height="280" loading="lazy" decoding="async">
+          </div>
+          <div class="product-tile-body">
+            <div class="tile-rating-row">
+              <span class="tile-rating">★ 4.9 (190+)</span>
+              <span class="tile-tag">Mace & Saffron</span>
+            </div>
+            <h3 class="tile-title">Biryani Masala</h3>
+            <div class="tile-hindi">बिरयानी मसाला • Dum Perfume</div>
+            <div class="tile-price-row">
+              <span class="tile-price">₹130</span>
+              <span class="tile-mrp">₹175</span>
+              <span class="tile-discount">26% OFF</span>
+            </div>
+            <button class="btn-tile-add btn-quick-add" data-product-key="biryani">
+              <span>+ Add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Product 4: Turmeric Powder (Haldi) -->
+        <div class="product-tile" data-product-key="turmeric" data-category="essentials" data-name="Turmeric Powder (Haldi)" data-hindi="पिसी हल्दी • High Curcumin" data-price="35" data-mrp="50" data-discount="30%" data-img="/assets/turmeric-powder.png">
+          <div class="product-tile-media">
+            <span class="tile-badge">🌿 HIGH CURCUMIN</span>
+            <img src="/assets/turmeric-powder.png" alt="Tumic Turmeric Powder" class="product-tile-img" width="280" height="280" loading="lazy" decoding="async">
+          </div>
+          <div class="product-tile-body">
+            <div class="tile-rating-row">
+              <span class="tile-rating">★ 4.9 (340+)</span>
+              <span class="tile-tag">Unpolished</span>
+            </div>
+            <h3 class="tile-title">Turmeric Powder (Haldi)</h3>
+            <div class="tile-hindi">पिसी हल्दी • Golden Rhizome</div>
+            <div class="tile-price-row">
+              <span class="tile-price">₹35</span>
+              <span class="tile-mrp">₹50</span>
+              <span class="tile-discount">30% OFF</span>
+            </div>
+            <button class="btn-tile-add btn-quick-add" data-product-key="turmeric">
+              <span>+ Add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Product 5: Coriander Powder (Dhaniya) -->
+        <div class="product-tile" data-product-key="coriander" data-category="essentials" data-name="Coriander Powder (Dhaniya)" data-hindi="पिसी धनिया • Fresh Earthy Body" data-price="35" data-mrp="50" data-discount="30%" data-img="/assets/coriander-powder.png">
+          <div class="product-tile-media">
+            <span class="tile-badge">🌱 WHOLE SEED</span>
+            <img src="/assets/coriander-powder.png" alt="Tumic Coriander Powder" class="product-tile-img" width="280" height="280" loading="lazy" decoding="async">
+          </div>
+          <div class="product-tile-body">
+            <div class="tile-rating-row">
+              <span class="tile-rating">★ 4.8 (275+)</span>
+              <span class="tile-tag">Cold Milled</span>
+            </div>
+            <h3 class="tile-title">Coriander Powder (Dhaniya)</h3>
+            <div class="tile-hindi">पिसी धनिया • Green Crushed</div>
+            <div class="tile-price-row">
+              <span class="tile-price">₹35</span>
+              <span class="tile-mrp">₹50</span>
+              <span class="tile-discount">30% OFF</span>
+            </div>
+            <button class="btn-tile-add btn-quick-add" data-product-key="coriander">
+              <span>+ Add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Product 6: Aachar Masala -->
+        <div class="product-tile" data-product-key="aachar" data-category="royal" data-name="Aachar Masala (Pickle/Sabzi)" data-hindi="अचार / सब्जी मसाला • Tangy Mustard" data-price="35" data-mrp="50" data-discount="30%" data-img="/assets/aachar-masala.png">
+          <div class="product-tile-media">
+            <span class="tile-badge royal">🫙 TRADITIONAL</span>
+            <img src="/assets/aachar-masala.png" alt="Tumic Aachar Masala" class="product-tile-img" width="280" height="280" loading="lazy" decoding="async">
+          </div>
+          <div class="product-tile-body">
+            <div class="tile-rating-row">
+              <span class="tile-rating">★ 4.9 (185+)</span>
+              <span class="tile-tag">Cracked Mustard</span>
+            </div>
+            <h3 class="tile-title">Aachar Masala (Pickle/Sabzi)</h3>
+            <div class="tile-hindi">अचार मसाला • Tangy Perfection</div>
+            <div class="tile-price-row">
+              <span class="tile-price">₹35</span>
+              <span class="tile-mrp">₹50</span>
+              <span class="tile-discount">30% OFF</span>
+            </div>
+            <button class="btn-tile-add btn-quick-add" data-product-key="aachar">
+              <span>+ Add</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SPLIT PROMOTIONAL VALUE BANNER
+       ========================================================================== -->
+  <section class="promo-banner">
+    <div class="container">
+      <div class="promo-inner">
+        <div class="promo-text">
+          <h3>Single-Origin Purity • Cold-Ground Flavor</h3>
+          <p>Milled slow at low temperatures in Kanpur to protect natural essential oils and authentic color.</p>
+        </div>
+        <a href="#combos-section" class="btn btn-primary">
+          <span>Shop Value Bundles</span>
+          <span>→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       "MADE FOR YOUR KITCHEN" / CULINARY USE-CASES
+       ========================================================================== -->
+  <section id="kitchen-section" class="section section-alt">
+    <div class="container">
+      
+      <div class="section-header">
+        <span class="section-tag">CULINARY PAIRINGS</span>
+        <h2 class="section-title">Made for Your Kitchen</h2>
+        <p class="section-desc">
+          Crafted to bring the rich, comforting taste of authentic Indian home cooking to every dish.
+        </p>
+      </div>
+
+      <div class="usecase-catalogue-grid">
+        
+        <div class="usecase-tile">
+          <div class="usecase-icon">🍲</div>
+          <h3 class="usecase-dish">Dum Biryani & Pulao</h3>
+          <p class="usecase-desc">Perfumes long-grain basmati with star anise, dagad phool & mace.</p>
+          <span class="usecase-tag">Biryani Masala</span>
+        </div>
+
+        <div class="usecase-tile">
+          <div class="usecase-icon">🥘</div>
+          <h3 class="usecase-dish">Rich Curries & Gravies</h3>
+          <p class="usecase-desc">Unlocks vibrant ASTA ruby red gravy and warm bouquet.</p>
+          <span class="usecase-tag">Chilli + Garam Masala</span>
+        </div>
+
+        <div class="usecase-tile">
+          <div class="usecase-icon">🥔</div>
+          <h3 class="usecase-dish">Daily Sabzi & Dal</h3>
+          <p class="usecase-desc">Golden turmeric root with green-tinged crushed coriander.</p>
+          <span class="usecase-tag">Haldi + Dhaniya</span>
+        </div>
+
+        <div class="usecase-tile">
+          <div class="usecase-icon">🫙</div>
+          <h3 class="usecase-dish">Grandma's Aachar</h3>
+          <p class="usecase-desc">Cracked yellow mustard, fennel, kalonji & fenugreek.</p>
+          <span class="usecase-tag">Aachar Masala</span>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       TUMIC VALUE COMBOS & BUNDLES
+       ========================================================================== -->
+  <section id="combos-section" class="section">
+    <div class="container">
+      
+      <div class="section-header">
+        <span class="section-tag">BUNDLE & SAVE</span>
+        <h2 class="section-title">Tumic Value Combos</h2>
+        <p class="section-desc">
+          Stock your pantry with our most popular spice combinations. Fresh, convenient, and unbeatable value.
+        </p>
+      </div>
+
+      <div class="combos-catalogue-grid">
+        
+        <!-- Combo 1: Everyday Kitchen Trio -->
+        <div class="combo-tile">
+          <div class="combo-media-box">
+            <img src="/assets/chilli-powder.jpg" alt="Chilli" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+            <img src="/assets/turmeric-powder.png" alt="Haldi" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+            <img src="/assets/coriander-powder.png" alt="Dhaniya" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+          </div>
+          <h3 class="combo-title">Everyday Kitchen Trio</h3>
+          <div class="combo-includes">Chilli (250g) + Haldi (250g) + Dhaniya (250g)</div>
+          <p class="combo-desc">The three foundation spices essential for every Indian kitchen dish.</p>
+          
+          <div class="tile-price-row">
+            <span class="tile-price">₹257</span>
+            <span class="tile-mrp">₹350</span>
+            <span class="tile-discount">SAVE 27%</span>
+          </div>
+
+          <button class="btn btn-primary btn-add-combo" data-combo-id="kitchen-trio" data-combo-name="Everyday Kitchen Trio (250g x 3)" data-combo-price="257" data-combo-mrp="350">
+            <span>+ Add Trio to Bag</span>
+          </button>
+        </div>
+
+        <!-- Combo 2: Royal Awadhi Dum Kit (Featured) -->
+        <div class="combo-tile featured">
+          <div class="combo-media-box">
+            <img src="/assets/biryani-masala.png" alt="Biryani" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+            <img src="/assets/garam-masala.png" alt="Garam Masala" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+          </div>
+          <h3 class="combo-title">Royal Awadhi Dum Kit</h3>
+          <div class="combo-includes">Biryani Masala (250g) + Garam Masala (250g)</div>
+          <p class="combo-desc">Flagship whole-roasted blends crafted for restaurant-style Dum Biryani & Shahi Gravies.</p>
+          
+          <div class="tile-price-row">
+            <span class="tile-price">₹528</span>
+            <span class="tile-mrp">₹720</span>
+            <span class="tile-discount">SAVE 26%</span>
+          </div>
+
+          <button class="btn btn-primary btn-add-combo" data-combo-id="royal-kit" data-combo-name="Royal Awadhi Dum Kit (250g x 2)" data-combo-price="528" data-combo-mrp="720">
+            <span>+ Add Royal Kit to Bag</span>
+          </button>
+        </div>
+
+        <!-- Combo 3: Master Chef 6-Spice Collection -->
+        <div class="combo-tile">
+          <div class="combo-media-box">
+            <img src="/assets/garam-masala.png" alt="Garam" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+            <img src="/assets/biryani-masala.png" alt="Biryani" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+            <img src="/assets/aachar-masala.png" alt="Aachar" class="combo-thumb-img" width="95" height="95" loading="lazy" decoding="async">
+          </div>
+          <h3 class="combo-title">Master Chef Box (All 6)</h3>
+          <div class="combo-includes">All 6 Tumic Spices (250g Each - 1.5kg Total)</div>
+          <p class="combo-desc">The complete authentic collection: Chilli, Haldi, Coriander, Garam, Biryani & Aachar Masala.</p>
+          
+          <div class="tile-price-row">
+            <span class="tile-price">₹845</span>
+            <span class="tile-mrp">₹1180</span>
+            <span class="tile-discount">SAVE 28%</span>
+          </div>
+
+          <button class="btn btn-primary btn-add-combo" data-combo-id="master-box" data-combo-name="Master Chef Box (All 6 Spices - 250g Each)" data-combo-price="845" data-combo-mrp="1180">
+            <span>+ Add Master Box to Bag</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       THE TUMIC DIFFERENCE (WHY TUMIC)
+       ========================================================================== -->
+  <section class="section section-alt">
+    <div class="container">
+      
+      <div class="section-header">
+        <span class="section-tag">UNCOMPROMISING PURITY</span>
+        <h2 class="section-title">The Tumic Difference</h2>
+        <p class="section-desc">
+          Four fundamental principles that make Tumic Spices the trusted choice for modern Indian kitchens.
+        </p>
+      </div>
+
+      <div class="pillars-catalogue-grid">
+        
+        <div class="pillar-tile">
+          <div class="pillar-icon">🌿</div>
+          <h3 class="pillar-title">100% Single-Origin</h3>
+          <p class="pillar-desc">Hand-selected whole spices with zero synthetic dyes, zero fillers, and no starch.</p>
+        </div>
+
+        <div class="pillar-tile">
+          <div class="pillar-icon">❄️</div>
+          <h3 class="pillar-title">Low-Temp Grinding</h3>
+          <p class="pillar-desc">Slow micro-milling protects volatile essential oils and natural ASTA color.</p>
+        </div>
+
+        <div class="pillar-tile">
+          <div class="pillar-icon">🛡️</div>
+          <h3 class="pillar-title">Aroma-Lock Barrier</h3>
+          <p class="pillar-desc">Triple-ply metallized moisture barrier locks in farm freshness for 12 months.</p>
+        </div>
+
+        <div class="pillar-tile">
+          <div class="pillar-icon">🇮🇳</div>
+          <h3 class="pillar-title">FSSAI Certified</h3>
+          <p class="pillar-desc">Certified purity crafted to deliver the familiar, comforting taste of Indian home cooking.</p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       BRAND STORY & FOUNDER SECTION
+       ========================================================================== -->
+  <section id="heritage-section" class="brand-story-section">
+    <div class="container">
+      <div class="brand-story-grid">
+        
+        <div class="brand-story-content">
+          <span class="section-tag" style="background: rgba(216, 154, 36, 0.15); color: var(--tumic-saffron);">FOUNDED WITH INTEGRITY</span>
+          <h2>The Taste Behind Every Meal</h2>
+          
+          <blockquote class="brand-quote">
+            “Tumic was built with a simple idea — bring authentic, unadulterated spices to everyday Indian kitchens while building a brand people can trust with their family’s meals.”
+          </blockquote>
+
+          <p>
+            Based in Kanpur, Uttar Pradesh, Tumic Spices was founded by <strong>Kashaf Shahid</strong> with a passion for genuine Indian flavors. In an industry plagued by synthetic polishing and heat-damaged powders, Tumic focuses strictly on cold micro-milling, single-origin sourcing, and honest pricing.
+          </p>
+
+          <p style="color: var(--tumic-saffron); font-weight: 700;">
+            Tumic Spices — Asli Masala, Tumic Wala.
+          </p>
+        </div>
+
+        <div class="story-stats-grid">
+          <div class="stat-item">
+            <div class="stat-num">100%</div>
+            <div class="stat-label">Purity Guarantee</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">6</div>
+            <div class="stat-label">Pure Spices</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">12M</div>
+            <div class="stat-label">Freshness Lock</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">0%</div>
+            <div class="stat-label">Synthetic Dyes</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       RECIPES / COOK WITH TUMIC
+       ========================================================================== -->
+  <section id="recipes-section" class="section">
+    <div class="container">
+      
+      <div class="section-header">
+        <span class="section-tag">KITCHEN INSPIRATION</span>
+        <h2 class="section-title">Cook With Tumic</h2>
+        <p class="section-desc">
+          Quick recipes and preparation tips to make restaurant-quality dishes at home.
+        </p>
+      </div>
+
+      <div class="recipes-catalogue-grid">
+        
+        <div class="recipe-tile">
+          <span class="usecase-tag">Biryani + Garam Masala</span>
+          <h3 class="recipe-dish" style="margin-top: 10px;">Royal Awadhi Dum Biryani</h3>
+          <p class="recipe-desc">Layered aromatic basmati rice infused with whole roasted spices, saffron milk, and tender cuts.</p>
+        </div>
+
+        <div class="recipe-tile">
+          <span class="usecase-tag">Chilli + Coriander Powder</span>
+          <h3 class="recipe-dish" style="margin-top: 10px;">Rich Paneer Butter Masala</h3>
+          <p class="recipe-desc">Velvety tomato gravy given intense ruby color with Tumic Chilli and thick earthy body with Coriander.</p>
+        </div>
+
+        <div class="recipe-tile">
+          <span class="usecase-tag">Aachar / Sabzi Masala</span>
+          <h3 class="recipe-dish" style="margin-top: 10px;">Chatpata Aloo & Bhindi Fry</h3>
+          <p class="recipe-desc">Crispy skillet-fried potatoes and okra tossed in cracked yellow mustard, fennel, and pickle spices.</p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FREQUENTLY ASKED QUESTIONS
+       ========================================================================== -->
+  <section id="faq-section" class="section section-alt">
+    <div class="container">
+      
+      <div class="section-header">
+        <span class="section-tag">GOT QUESTIONS?</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-desc">
+          Everything you need to know about our sourcing, cold milling, packaging, and orders.
+        </p>
+      </div>
+
+      <div class="faq-accordion">
+        
+        <details class="faq-item" open>
+          <summary class="faq-question">What spices are available in the Tumic Spices collection?</summary>
+          <div class="faq-answer">
+            <p>Our pure range currently includes: Chilli Powder (from ₹45), Garam Masala (from ₹100), Biryani Masala (from ₹130), Turmeric Powder / Haldi (from ₹35), Coriander Powder / Dhaniya (from ₹35), and Aachar / Sabzi Masala (from ₹35). Each is available in 100g, 250g, 500g, and 1kg packs.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">How does cold-grinding preserve the spices?</summary>
+          <div class="faq-answer">
+            <p>Industrial high-speed milling generates extreme friction heat that vaporizes delicate essential oils and scorches natural colors. Tumic Spices uses low-temperature slow micro-milling, preserving 100% of authentic aroma, flavor, and natural ASTA pigments.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">How are online orders confirmed and synchronized?</summary>
+          <div class="faq-answer">
+            <p>When you checkout on the Tumic website, your order is automatically confirmed and recorded in Odoo Enterprise Invoicing with a verified tax invoice. You receive instant confirmation and can chat directly with our team on WhatsApp for delivery status.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">How can I place bulk or wholesale orders?</summary>
+          <div class="faq-answer">
+            <p>For restaurant bulk orders, catering, or retail distribution, you can directly contact our Kanpur team at +91 86044 46189 or click "Order on WhatsApp" from any product card.</p>
+          </div>
+        </details>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FMCG FOOTER
+       ========================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      
+      <div class="footer-grid">
+        
+        <div class="footer-brand">
+          <img src="/assets/tumic-logo-light.webp" alt="Tumic Spices - Crafted for the Perfect Taste" class="footer-logo-img" width="180" height="62" loading="lazy" decoding="async">
+          <p>Crafted for authentic Indian cooking. 100% pure, slow-milled spices with zero synthetic additives.</p>
+          <p style="font-size: 0.78rem; color: #D9CCC0; margin-top: 8px;">FSSAI Lic. No: 2276315001435 • Made in Kanpur, India</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Shop Spices</h4>
+          <ul class="footer-links">
+            <li><a href="#products-catalog">All Spices (6)</a></li>
+            <li><a href="#products-catalog">Chilli Powder</a></li>
+            <li><a href="#products-catalog">Garam Masala</a></li>
+            <li><a href="#products-catalog">Biryani Masala</a></li>
+            <li><a href="#products-catalog">Turmeric (Haldi)</a></li>
+            <li><a href="#combos-section">Value Combos</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>About Tumic</h4>
+          <ul class="footer-links">
+            <li><a href="#heritage-section">Our Story</a></li>
+            <li><a href="#heritage-section">Meet the Founder</a></li>
+            <li><a href="#kitchen-section">Culinary Pairings</a></li>
+            <li><a href="#recipes-section">Cook with Tumic</a></li>
+            <li><a href="#faq-section">Help & FAQs</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col footer-contact">
+          <h4>Contact & Orders</h4>
+          <p>Al-Noor Apartments, Prem Nagar, 208012, Kanpur, Uttar Pradesh</p>
+          <p>Phone: +91 86044 46189</p>
+          <p><a href="https://wa.me/918604446189" target="_blank" style="color: var(--tumic-saffron);">💬 WhatsApp Direct Hotline</a></p>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 Tumic Spices. All Rights Reserved. Asli Masala, Tumic Wala.</p>
+        <button id="admin-orders-toggle-btn" class="admin-footer-btn" title="Store Manager Order Dashboard & Odoo Sync">
+          <span>⚙️ Admin Orders & Odoo</span>
+          <span id="admin-orders-badge" style="width: 8px; height: 8px; background: #39704A; border-radius: 50%; display: inline-block;"></span>
+        </button>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       QUICK-VARIANT BOTTOM SHEET MODAL (#quick-variant-modal)
+       ========================================================================== -->
+  <div id="quick-variant-modal" class="quick-variant-overlay">
+    <div class="quick-variant-sheet">
+      
+      <div class="sheet-header">
+        <div class="sheet-img-box">
+          <img id="sheet-prod-img" src="/assets/chilli-powder.jpg" alt="Product Image" width="72" height="72" decoding="async">
+        </div>
+        <div class="sheet-title-col">
+          <h3 id="sheet-prod-title" class="sheet-title">Chilli Powder</h3>
+          <div id="sheet-prod-hindi" class="sheet-hindi">लाल मिर्च पाउडर • High Capsaicin</div>
+          <div class="tile-price-row" style="margin-bottom: 0;">
+            <span class="tile-price">₹<span id="sheet-active-price">45</span></span>
+            <span class="tile-mrp" id="sheet-active-mrp">₹60</span>
+            <span class="tile-discount" id="sheet-active-discount">25% OFF</span>
+          </div>
+        </div>
+        <button id="sheet-close-btn" class="sheet-close-btn" aria-label="Close Variant Selector">✕</button>
+      </div>
+
+      <span class="sheet-label">Select Pack Size:</span>
+      <div class="sheet-variants-grid" id="sheet-variants-container">
+        <!-- Dynamically rendered via JS -->
+      </div>
+
+      <div class="sheet-qty-row">
+        <span style="font-size: 0.88rem; font-weight: 600; color: var(--tumic-espresso);">Quantity:</span>
+        <div class="qty-stepper">
+          <button id="sheet-qty-dec">−</button>
+          <span id="sheet-qty-val" class="qty-val">1</span>
+          <button id="sheet-qty-inc">+</button>
+        </div>
+      </div>
+
+      <div class="sheet-actions">
+        <button id="btn-sheet-add-to-cart" class="btn btn-primary sheet-add-btn">
+          <span>🛒 Add to Bag • ₹<span id="sheet-btn-total">45</span></span>
+        </button>
+        <a href="#" id="sheet-wa-order-btn" target="_blank" class="btn btn-whatsapp" title="Order on WhatsApp">
+          <span>💬</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       CART DRAWER SLIDE-OVER
+       ========================================================================== -->
+  <div id="cart-drawer-overlay" class="cart-overlay"></div>
+
+  <aside id="cart-drawer" class="cart-drawer" aria-label="Shopping Cart Drawer">
+    <div class="cart-drawer-header">
+      <h3>
+        <span>🛒 Your Bag</span>
+        <span id="cart-drawer-count" class="cart-items-count-text">(0 items)</span>
+      </h3>
+      <button id="cart-drawer-close" class="drawer-close-btn" aria-label="Close Shopping Bag">✕</button>
+    </div>
+
+    <!-- Scrollable Items Body -->
+    <div id="cart-items-body" class="cart-drawer-body">
+      <!-- Dynamically populated via JavaScript -->
+    </div>
+
+    <!-- Cart Summary & Checkout Footer -->
+    <div class="cart-drawer-footer" id="cart-footer-box">
+      <div class="cart-summary-row">
+        <span>Items Subtotal:</span>
+        <span id="cart-subtotal-amount" style="font-weight: 700; color: var(--tumic-espresso);">₹0</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Delivery:</span>
+        <span class="cart-free-shipping-tag">FREE (All India)</span>
+      </div>
+      <div class="cart-summary-row total-row">
+        <span>Total Amount:</span>
+        <span id="cart-total-amount" class="total-amount-highlight">₹0</span>
+      </div>
+
+      <button id="btn-proceed-checkout" class="btn btn-primary btn-proceed-checkout">
+        <span>Proceed to Checkout</span>
+        <span>→</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       CHECKOUT MODAL (CUSTOMER SHIPPING & PAYMENT)
+       ========================================================================== -->
+  <div id="checkout-modal" class="checkout-modal-overlay">
+    <div class="checkout-container">
+      
+      <div class="checkout-header">
+        <button id="checkout-back-btn" class="btn-outline btn-sm">← Back to Bag</button>
+        <h3 class="checkout-title">Checkout & Shipping</h3>
+        <button id="checkout-close-btn" class="drawer-close-btn" aria-label="Close Checkout">✕</button>
+      </div>
+
+      <form id="checkout-order-form" class="checkout-form">
+        <div class="checkout-grid">
+          
+          <!-- Left Column: Delivery Details -->
+          <div class="checkout-form-col">
+            <h4>📦 Shipping Address</h4>
+
+            <div class="form-group">
+              <label for="cust-name">Full Name <span class="required">*</span></label>
+              <input type="text" id="cust-name" class="form-input" placeholder="e.g. Rahul Sharma" required>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="cust-phone">Mobile Number <span class="required">*</span></label>
+                <input type="tel" id="cust-phone" class="form-input" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+              </div>
+              <div class="form-group">
+                <label for="cust-email">Email Address <span class="required">*</span></label>
+                <input type="email" id="cust-email" class="form-input" placeholder="name@example.com" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="cust-address">Street Address / House No / Area <span class="required">*</span></label>
+              <textarea id="cust-address" class="form-textarea" rows="2" placeholder="e.g. Flat 302, Prem Nagar" required></textarea>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label for="cust-city">City <span class="required">*</span></label>
+                <input type="text" id="cust-city" class="form-input" placeholder="Auto-filled via PIN" required readonly style="background: var(--bg-surface-subtle); cursor: not-allowed;">
+              </div>
+              <div class="form-group">
+                <label for="cust-state">State <span class="required">*</span></label>
+                <input type="text" id="cust-state" class="form-input" placeholder="Auto-filled via PIN" required readonly style="background: var(--bg-surface-subtle); cursor: not-allowed;">
+              </div>
+              <div class="form-group">
+                <label for="cust-pincode">PIN Code <span class="required">*</span></label>
+                <input type="text" id="cust-pincode" class="form-input" placeholder="6 digits" pattern="[0-9]{6}" maxlength="6" required>
+                <div id="pin-status" style="font-size: 0.75rem; margin-top: 4px;"></div>
+              </div>
+            </div>
+
+            <h4 style="margin-top: 16px;">💳 Payment Preference</h4>
+            <div class="payment-options-grid">
+              <label class="payment-option-card active">
+                <input type="radio" name="paymentMethod" value="Cash on Delivery (COD)" checked>
+                <div>
+                  <strong>💵 Cash on Delivery (COD)</strong>
+                  <p style="font-size: 0.78rem; color: var(--tumic-taupe); margin: 0;">Pay with cash upon package arrival</p>
+                </div>
+              </label>
+
+              <label class="payment-option-card">
+                <input type="radio" name="paymentMethod" value="UPI / Online on Delivery">
+                <div>
+                  <strong>📱 UPI on Delivery (GPay / PhonePe / QR)</strong>
+                  <p style="font-size: 0.78rem; color: var(--tumic-taupe); margin: 0;">Scan delivery QR code via any UPI App</p>
+                </div>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Order Breakdown -->
+          <div class="checkout-summary-col">
+            <h4>🧾 Order Breakdown</h4>
+            
+            <div class="checkout-summary-box">
+              <div id="checkout-items-list" class="checkout-items-list">
+                <!-- Populated dynamically via JS -->
+              </div>
+
+              <div class="cart-summary-row">
+                <span>Items Subtotal:</span>
+                <span id="checkout-subtotal-val" style="font-weight: 700; color: var(--tumic-espresso);">₹0</span>
+              </div>
+              <div class="cart-summary-row">
+                <span>Delivery:</span>
+                <span class="cart-free-shipping-tag">FREE</span>
+              </div>
+              <div class="cart-summary-row total-row">
+                <span>Total Payable:</span>
+                <span id="checkout-total-val" class="total-amount-highlight">₹0</span>
+              </div>
+
+              <button type="submit" id="btn-place-order" class="btn btn-primary btn-place-order">
+                <span>Place Order Now</span>
+                <span>🔒</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       ORDER CONFIRMATION RECEIPT MODAL
+       ========================================================================== -->
+  <div id="order-confirmation-modal" class="order-confirmation-overlay">
+    <div class="receipt-container">
+      
+      <div class="receipt-success-icon">✓</div>
+      <h3 class="receipt-title">Order Confirmed 🎉</h3>
+      <p style="font-size: 0.88rem; color: var(--tumic-taupe); margin-bottom: 16px;">
+        Thank you for choosing Tumic Spices! Your order has been placed successfully and synchronized with Odoo Enterprise for batch preparation.
+      </p>
+
+      <div class="receipt-highlight-card">
+        <div class="receipt-meta-block">
+          <span>Order ID</span>
+          <strong id="receipt-order-id">#TUMIC-2026-000000</strong>
+        </div>
+        <div class="receipt-meta-block">
+          <span>Order Date</span>
+          <strong id="receipt-order-date">Today</strong>
+        </div>
+        <div class="receipt-meta-block">
+          <span>Payment</span>
+          <strong id="receipt-payment-method">Cash on Delivery</strong>
+        </div>
+        <div class="receipt-meta-block" id="receipt-odoo-inv-block">
+          <span>Odoo Tax Invoice</span>
+          <strong id="receipt-odoo-inv-id" style="color: var(--tumic-herb);">#INV/26-27/0028</strong>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="receipt-items-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th style="text-align: center;">Qty</th>
+              <th style="text-align: right;">Price</th>
+              <th style="text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody id="receipt-items-tbody">
+            <!-- Dynamically populated -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="text-align: right; font-weight: 700; padding: 10px;">Grand Total:</td>
+              <td style="text-align: right; font-weight: 800; color: var(--tumic-burgundy); font-size: 1.1rem; padding: 10px;" id="receipt-grand-total">₹0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="receipt-address-box">
+        <strong id="receipt-customer-name" style="color: var(--tumic-espresso); display: block; margin-bottom: 2px;">Customer</strong>
+        <span id="receipt-customer-address" style="color: var(--tumic-taupe); display: block; margin-bottom: 2px;">Delivery Address</span>
+        <span id="receipt-customer-phone" style="color: var(--tumic-burgundy); font-weight: 600;">Phone: +91 </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+        <a href="#" id="receipt-wa-chat-btn" target="_blank" class="btn btn-whatsapp btn-lg" style="width: 100%; justify-content: center;">
+          <span>💬 Chat with us on WhatsApp (+91 86044 46189)</span>
+        </a>
+        <a href="#" id="receipt-wa-details-btn" target="_blank" class="btn btn-outline" style="width: 100%; justify-content: center; color: #128C7E; border-color: rgba(37, 211, 102, 0.4);">
+          <span>📋 Send Full Order Summary on WhatsApp</span>
+        </a>
+        <button id="receipt-continue-btn" class="btn btn-outline" style="width: 100%; justify-content: center;">
+          <span>🛍️ Continue Shopping</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       TRACK ORDER STATUS MODAL
+       ========================================================================== -->
+  <div id="track-order-modal" class="drawer-overlay">
+    <div class="checkout-container" style="max-width: 540px; padding: 24px;">
+      <div class="checkout-header" style="padding: 0 0 14px 0; margin-bottom: 14px;">
+        <div>
+          <h3 class="checkout-title">📦 Track Your Order</h3>
+          <p style="font-size: 0.8rem; color: var(--tumic-taupe); margin: 0;">Search by Website Order ID or 10-digit phone number</p>
+        </div>
+        <button id="track-modal-close" class="drawer-close-btn" aria-label="Close Tracking Modal">✕</button>
+      </div>
+
+      <form id="track-order-form" style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <input type="text" id="track-order-input" class="form-input" placeholder="Enter Order ID or Phone" required style="flex: 1;">
+        <button type="submit" id="btn-track-submit" class="btn btn-primary">
+          <span>Track</span>
+        </button>
+      </form>
+
+      <div id="track-order-result" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       ADMIN ORDERS & ODOO ENTERPRISE DASHBOARD MODAL
+       ========================================================================== -->
+  <div id="admin-orders-modal" class="admin-orders-overlay">
+    <div class="admin-container">
+      
+      <div class="admin-header">
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--tumic-espresso);">📊 Tumic Orders & Odoo Manager</h3>
+          <p style="font-size: 0.78rem; color: var(--tumic-taupe); margin: 0;">Real-time orders and Odoo 19 synchronization</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="admin-odoo-status-pill" class="sync-badge pending">
+            <span id="admin-odoo-status-text">Checking Odoo...</span>
+          </span>
+          <button id="admin-refresh-orders-btn" class="btn btn-outline btn-sm">🔄</button>
+          <button id="admin-modal-close" class="drawer-close-btn" aria-label="Close Admin Modal">✕</button>
+        </div>
+      </div>
+
+      <div style="padding: 12px 20px; background: var(--tumic-ivory); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <input type="text" id="admin-search-input" class="form-input" style="max-width: 320px; padding: 6px 10px; font-size: 0.85rem;" placeholder="🔍 Search Order, Phone, or Odoo...">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button id="btn-toggle-odoo-setup" class="btn btn-outline btn-sm">⚙️ Odoo Settings</button>
+          <span style="font-size: 0.8rem; color: var(--tumic-taupe);">Total Orders: <strong id="admin-orders-total-count" style="color: var(--tumic-burgundy);">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Odoo Setup Drawer -->
+      <div id="admin-odoo-setup-panel" style="display: none; padding: 16px 20px; background: #FFFBEB; border-bottom: 1px solid #FDE68A;">
+        <form id="admin-odoo-credentials-form">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="color: var(--tumic-saffron); margin: 0; font-size: 0.9rem;">🔑 Odoo 19 Configuration</h4>
+            <button type="button" id="btn-test-odoo-conn" class="btn btn-outline btn-sm">🧪 Test Connection</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 0.72rem; color: var(--tumic-taupe); display: block;">Instance URL</label>
+              <input type="url" id="setup-odoo-url" class="form-input" style="padding: 5px 8px; font-size: 0.82rem;" placeholder="https://tumicspices.odoo.com" required>
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; color: var(--tumic-taupe); display: block;">Database</label>
+              <input type="text" id="setup-odoo-db" class="form-input" style="padding: 5px 8px; font-size: 0.82rem;" placeholder="tumicspices" required>
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; color: var(--tumic-taupe); display: block;">User Login / Email</label>
+              <input type="text" id="setup-odoo-user" class="form-input" style="padding: 5px 8px; font-size: 0.82rem;" placeholder="realtumicspices@gmail.com" required>
+            </div>
+            <div>
+              <label style="font-size: 0.72rem; color: var(--tumic-taupe); display: block;">API Key</label>
+              <input type="password" id="setup-odoo-apikey" class="form-input" style="padding: 5px 8px; font-size: 0.82rem;" placeholder="••••••••••••" required>
+            </div>
+          </div>
+
+          <div id="odoo-test-result-box" style="display: none; padding: 8px; border-radius: 4px; font-size: 0.78rem; margin-bottom: 8px;"></div>
+
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" id="btn-save-odoo-config" class="btn btn-primary btn-sm">💾 Save & Verify</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-orders-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Products</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Odoo SO</th>
+              <th>Odoo Invoice</th>
+              <th>Sync</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders-tbody">
+            <!-- Populated dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Floating WhatsApp Quick Button -->
+  <a href="https://wa.me/918604446189?text=Hi%20Tumic%20Spices%2C%20I%20have%20an%20inquiry" target="_blank" id="floating-wa-btn" class="floating-wa-button" aria-label="Chat on WhatsApp" title="Chat with Tumic Spices on WhatsApp">
+    <span style="font-size: 1.15rem;">💬</span>
+    <span class="floating-wa-text">Chat on WhatsApp</span>
+  </a>
+
+  <!-- Toast Notification Modal -->
+  <div id="toast-notify" class="toast-notify hidden">
+    <span id="toast-msg">Item added to bag!</span>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

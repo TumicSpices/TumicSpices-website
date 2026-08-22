@@ -1,0 +1,2403 @@
+/* ==========================================================================
+   Tumic Spices — New Premium Spice Palette Design System
+   "Asli Masala, Tumic Wala."
+   Warm Ivory (#FFF8EF) | Spice Cream (#F4E4D2) | Rich Chili (#A71935)
+   Espresso (#241B18) | Saffron (#D99119) | Natural Herb (#557044) | Soft Rose (#E7C4C1)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design Tokens & Global Variables
+   -------------------------------------------------------------------------- */
+:root {
+  /* Exact New Tumic Premium Spice Palette Tokens */
+  --tumic-ivory: #FFF8EF;          /* Main Background: Warm Ivory (55%) */
+  --tumic-spice-cream: #F4E4D2;    /* Secondary Background: Spice Cream (20%) */
+  --tumic-chili: #A71935;          /* Primary Brand: Rich Chili (8%) */
+  --tumic-chili-dark: #871129;     /* Deep Chili for Hover States */
+  --tumic-chili-light: #FDECEE;    /* Soft Rose Tint for Active / Badges */
+  --tumic-espresso: #241B18;       /* Primary Dark: Espresso Text & Footers (15%) */
+  --tumic-saffron: #D99119;        /* Accent: Saffron for Stars & Badges (2%) */
+  --tumic-herb: #557044;           /* Natural Herb Accent for Purity / Trust */
+  --tumic-rose-soft: #E7C4C1;      /* Soft Rose for Light Badges & Hovers */
+
+  /* Functional Mappings */
+  --primary: var(--tumic-chili);
+  --primary-dark: var(--tumic-chili-dark);
+  --primary-hover: var(--tumic-chili-dark);
+  --primary-light: var(--tumic-chili-light);
+  --primary-border: rgba(167, 25, 53, 0.25);
+  
+  --secondary: var(--tumic-saffron);
+  --secondary-light: #FEF7EC;
+  
+  --accent-gold: var(--tumic-saffron);
+  --accent-green: var(--tumic-herb);
+  --accent-green-light: #EDF3EB;
+  --whatsapp-color: #25D366;
+  --whatsapp-hover: #1EBE5D;
+
+  /* Surfaces & Backgrounds */
+  --bg-body: var(--tumic-ivory);
+  --bg-surface: var(--tumic-ivory);
+  --bg-surface-alt: var(--tumic-spice-cream);
+  --bg-surface-subtle: #FAEEE1;
+  --bg-dark: var(--tumic-espresso);
+  
+  /* Text */
+  --text-heading: var(--tumic-espresso);
+  --text-main: var(--tumic-espresso);
+  --text-muted: #665A54;
+  --text-subtle: #8F827B;
+  --text-white: var(--tumic-ivory);
+
+  /* Borders & Dividers */
+  --border-light: #E6D7C8;
+  --border-subtle: #EFE4D7;
+  --border-medium: #D8C3AF;
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, 'Cinzel', serif;
+  --font-body: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Grotesk', monospace;
+
+  /* High-Performance Lightweight Shadows */
+  --shadow-sm: 0 1px 3px rgba(36, 27, 24, 0.04);
+  --shadow-card: 0 2px 8px rgba(36, 27, 24, 0.04);
+  --shadow-card-hover: 0 6px 16px rgba(36, 27, 24, 0.08);
+  --shadow-modal: 0 16px 40px rgba(36, 27, 24, 0.25);
+  --shadow-primary-btn: 0 2px 8px rgba(167, 25, 53, 0.28);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Header & Layout */
+  --header-height-desktop: 72px;
+  --header-height-mobile: 62px;
+  --container-max: 1240px;
+  --transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* --------------------------------------------------------------------------
+   2. Base Resets & Global Styles (Zero Horizontal Overflow)
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: var(--transition);
+}
+
+input, textarea, select {
+  font-family: inherit;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+  box-sizing: border-box;
+}
+
+/* Common Section Layout */
+.section {
+  padding: 48px 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Performance: Off-Screen Rendering Optimization */
+#kitchen-section,
+#combos-section,
+#heritage-section,
+#recipes-section,
+#faq-section,
+.site-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 400px;
+}
+
+.section-alt {
+  background-color: var(--tumic-spice-cream);
+  border-top: 1px solid rgba(36, 27, 24, 0.08);
+  border-bottom: 1px solid rgba(36, 27, 24, 0.08);
+}
+
+.section-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 32px auto;
+}
+
+.section-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--tumic-chili);
+  background: var(--primary-light);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.section-desc {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   3. Top Announcement Bar (Espresso #241B18 & Warm Ivory #FFF8EF)
+   -------------------------------------------------------------------------- */
+.announcement-bar {
+  background: var(--tumic-espresso);
+  color: var(--tumic-ivory);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 7px 16px;
+  text-align: center;
+  position: relative;
+  z-index: 1001;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.announcement-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.announcement-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.announcement-link {
+  color: var(--tumic-saffron);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 700;
+}
+
+.announcement-link:hover {
+  color: var(--tumic-ivory);
+}
+
+/* --------------------------------------------------------------------------
+   4. Header (Warm Ivory Background & Strong Prominent Logo)
+   -------------------------------------------------------------------------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--tumic-ivory);
+  border-bottom: 1px solid var(--border-light);
+  height: var(--header-height-desktop);
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.site-header.scrolled {
+  background: #FDF4E7;
+  box-shadow: 0 2px 10px rgba(36, 27, 24, 0.07);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Brand Logo (Official Tumic Spices Wordmark & Tagline) */
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  line-height: 1;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  min-width: 0;
+}
+
+.brand-logo:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.brand-logo-img {
+  height: 54px;
+  width: auto;
+  max-width: 185px;
+  object-fit: contain;
+  display: block;
+}
+
+.drawer-brand-block {
+  display: flex;
+  align-items: center;
+}
+
+.drawer-logo-img {
+  height: 44px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Desktop Nav Links */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-link {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--tumic-espresso);
+  position: relative;
+  padding: 6px 0;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--tumic-chili);
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tumic-espresso);
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  font-size: 1.1rem;
+  position: relative;
+  transition: var(--transition);
+}
+
+.btn-header-icon:hover {
+  background: var(--primary-light);
+  color: var(--tumic-chili);
+  border-color: var(--primary-border);
+}
+
+.cart-icon-btn {
+  position: relative;
+}
+
+.cart-count-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: var(--tumic-chili);
+  color: var(--tumic-ivory);
+  font-size: 0.7rem;
+  font-weight: 800;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn {
+  display: none;
+  font-size: 1.35rem;
+  color: var(--tumic-espresso);
+  padding: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   5. Mobile Drawer Navigation
+   -------------------------------------------------------------------------- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 27, 24, 0.55);
+  z-index: 2100;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 85%;
+  max-width: 300px;
+  background: var(--tumic-ivory);
+  z-index: 2200;
+  transform: translateX(-100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s ease;
+  box-shadow: 4px 0 20px rgba(36, 27, 24, 0.14);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-drawer.open {
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.mobile-drawer-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--tumic-spice-cream);
+}
+
+.mobile-drawer-body {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--tumic-espresso);
+  border-radius: var(--radius-sm);
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.active {
+  background: var(--primary-light);
+  color: var(--tumic-chili);
+}
+
+.drawer-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: var(--text-muted);
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+}
+
+/* --------------------------------------------------------------------------
+   6. Clean Hero Banner (Warm Ivory Background & Rich Chili CTA)
+   -------------------------------------------------------------------------- */
+.hero-section {
+  background: var(--tumic-ivory);
+  padding: 36px 0 44px 0;
+  border-bottom: 1px solid var(--border-light);
+  width: 100%;
+  overflow: hidden;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 32px;
+  align-items: center;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--tumic-spice-cream);
+  border: 1px solid var(--tumic-saffron);
+  border-radius: var(--radius-full);
+  color: var(--tumic-espresso);
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--tumic-espresso);
+  letter-spacing: -0.5px;
+}
+
+.hero-title .highlight-red {
+  color: var(--tumic-chili);
+}
+
+.hero-description {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 480px;
+}
+
+.hero-ctas {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.btn-primary {
+  background-color: var(--tumic-chili);
+  color: var(--tumic-ivory);
+  box-shadow: var(--shadow-primary-btn);
+}
+
+.btn-primary:hover {
+  background-color: var(--tumic-chili-dark);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--tumic-espresso);
+  border: 1.5px solid var(--tumic-espresso);
+}
+
+.btn-secondary:hover {
+  background-color: var(--tumic-spice-cream);
+  border-color: var(--tumic-espresso);
+  color: var(--tumic-espresso);
+}
+
+.btn-outline {
+  border: 1px solid var(--border-medium);
+  background: transparent;
+  color: var(--text-main);
+}
+
+.btn-outline:hover {
+  border-color: var(--tumic-espresso);
+  background: var(--tumic-spice-cream);
+}
+
+.btn-whatsapp {
+  background-color: var(--whatsapp-color);
+  color: #FFFFFF;
+}
+
+.btn-whatsapp:hover {
+  background-color: var(--whatsapp-hover);
+}
+
+.btn-lg {
+  padding: 12px 22px;
+  font-size: 0.95rem;
+  border-radius: var(--radius-md);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.hero-media-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.hero-img-box {
+  width: 100%;
+  max-width: 360px;
+  background: var(--tumic-ivory);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.hero-main-img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   7. Category Visual Navigation Pills
+   -------------------------------------------------------------------------- */
+.category-nav-bar {
+  padding: 20px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.cat-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--tumic-espresso);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.cat-nav-pill:hover,
+.cat-nav-pill.active {
+  background: var(--tumic-chili);
+  color: var(--tumic-ivory);
+  border-color: var(--tumic-chili);
+  box-shadow: var(--shadow-primary-btn);
+}
+
+/* --------------------------------------------------------------------------
+   8. Product Catalogue Grid (Clean Warm Ivory / Spice Cream Cards)
+   -------------------------------------------------------------------------- */
+.products-catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+/* Compact Modern Product Tile */
+.product-tile {
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition);
+  position: relative;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  contain: content;
+}
+
+.product-tile:hover {
+  border-color: var(--tumic-chili);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.product-tile-media {
+  position: relative;
+  width: 100%;
+  padding-top: 100%; /* 1:1 Square aspect ratio */
+  background: var(--tumic-spice-cream);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.product-tile-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+  transition: transform 0.2s ease;
+}
+
+.product-tile:hover .product-tile-img {
+  transform: scale(1.04);
+}
+
+.tile-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--tumic-chili);
+  color: var(--tumic-ivory);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 5px;
+  border-radius: var(--radius-xs);
+  z-index: 2;
+  white-space: nowrap;
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-badge.royal {
+  background: var(--tumic-saffron);
+  color: var(--tumic-espresso);
+}
+
+.product-tile-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.tile-rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 2px;
+  overflow: hidden;
+}
+
+.tile-rating {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--tumic-saffron);
+  white-space: nowrap;
+}
+
+.tile-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--tumic-herb);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-title {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  line-height: 1.25;
+  margin-bottom: 2px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.tile-hindi {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: auto;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.tile-price {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--tumic-chili);
+}
+
+.tile-mrp {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+  text-decoration: line-through;
+}
+
+.tile-discount {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--tumic-chili);
+  background: var(--primary-light);
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.btn-tile-add {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: var(--tumic-spice-cream);
+  color: var(--tumic-espresso);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: var(--transition);
+}
+
+.product-tile:hover .btn-tile-add,
+.btn-tile-add:hover {
+  background: var(--tumic-chili);
+  color: var(--tumic-ivory);
+  border-color: var(--tumic-chili);
+}
+
+/* --------------------------------------------------------------------------
+   9. Quick-Variant Bottom Sheet Modal (#quick-variant-modal)
+   -------------------------------------------------------------------------- */
+.quick-variant-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 27, 24, 0.55);
+  z-index: 3000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.quick-variant-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.quick-variant-sheet {
+  background: var(--tumic-ivory);
+  width: 100%;
+  max-width: 500px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 20px;
+  box-shadow: 0 -8px 24px rgba(36, 27, 24, 0.15);
+  transform: translateY(100%);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.quick-variant-overlay.open .quick-variant-sheet {
+  transform: translateY(0);
+}
+
+.sheet-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.sheet-img-box {
+  width: 72px;
+  height: 72px;
+  background: var(--tumic-spice-cream);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.sheet-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sheet-title-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-title {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  line-height: 1.2;
+}
+
+.sheet-hindi {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.sheet-close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tumic-spice-cream);
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.sheet-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.sheet-variants-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.sheet-variant-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--tumic-ivory);
+  transition: var(--transition);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sheet-variant-btn:hover {
+  border-color: var(--tumic-chili);
+}
+
+.sheet-variant-btn.active {
+  border-color: var(--tumic-chili);
+  background: var(--primary-light);
+}
+
+.sheet-variant-btn .sv-weight {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+}
+
+.sheet-variant-btn .sv-price {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--tumic-chili);
+}
+
+.sheet-variant-btn .sv-sub {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+.sheet-qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--tumic-ivory);
+}
+
+.qty-stepper button {
+  width: 34px;
+  height: 34px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--tumic-espresso);
+  background: var(--tumic-spice-cream);
+}
+
+.qty-stepper button:hover {
+  background: var(--border-medium);
+}
+
+.qty-stepper .qty-val {
+  min-width: 32px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sheet-add-btn {
+  flex: 1;
+  padding: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   10. Split Promotional Banner (Espresso #241B18 & Saffron Accents)
+   -------------------------------------------------------------------------- */
+.promo-banner {
+  background: var(--tumic-espresso);
+  color: var(--tumic-ivory);
+  padding: 28px 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.promo-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.promo-text h3 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--tumic-ivory);
+  margin-bottom: 4px;
+}
+
+.promo-text p {
+  color: var(--tumic-spice-cream);
+  font-size: 0.88rem;
+}
+
+/* --------------------------------------------------------------------------
+   11. Combos & Value Bundles (Clean Warm Ivory / Spice Cream Layout)
+   -------------------------------------------------------------------------- */
+.combos-catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.combo-tile {
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition);
+  position: relative;
+  min-width: 0;
+  box-sizing: border-box;
+  contain: content;
+}
+
+.combo-tile:hover {
+  border-color: var(--tumic-chili);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.combo-tile.featured {
+  border-color: var(--tumic-chili);
+  background: var(--tumic-ivory);
+}
+
+.combo-media-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 120px;
+  background: var(--tumic-spice-cream);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.combo-thumb-img {
+  max-height: 95px;
+  max-width: calc(33.33% - 4px);
+  object-fit: contain;
+}
+
+.combo-title {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  margin-bottom: 2px;
+}
+
+.combo-includes {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--tumic-saffron);
+  margin-bottom: 4px;
+}
+
+.combo-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-bottom: 10px;
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   12. "Made for Your Kitchen" / Use-Case Section
+   -------------------------------------------------------------------------- */
+.usecase-catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.usecase-tile {
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px 12px;
+  text-align: center;
+  transition: var(--transition);
+  min-width: 0;
+  box-sizing: border-box;
+  contain: content;
+}
+
+.usecase-tile:hover {
+  border-color: var(--tumic-saffron);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+.usecase-icon {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+
+.usecase-dish {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  margin-bottom: 4px;
+}
+
+.usecase-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+.usecase-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--tumic-chili);
+  background: var(--primary-light);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+
+/* --------------------------------------------------------------------------
+   13. Trust Pillars / Why Tumic
+   -------------------------------------------------------------------------- */
+.pillars-catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.pillar-tile {
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 18px 12px;
+  text-align: center;
+  min-width: 0;
+  box-sizing: border-box;
+  contain: content;
+}
+
+.pillar-icon {
+  font-size: 1.5rem;
+  color: var(--tumic-saffron);
+  margin-bottom: 6px;
+}
+
+.pillar-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  margin-bottom: 4px;
+}
+
+.pillar-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
+   14. Brand Story & Founder Section (Espresso Background & Saffron Accents)
+   -------------------------------------------------------------------------- */
+.brand-story-section {
+  background: var(--tumic-espresso);
+  color: var(--tumic-ivory);
+  padding: 56px 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.brand-story-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 36px;
+  align-items: center;
+}
+
+.brand-story-content h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--tumic-ivory);
+  margin-bottom: 10px;
+}
+
+.brand-quote {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--tumic-saffron);
+  border-left: 3px solid var(--tumic-saffron);
+  padding-left: 12px;
+  margin: 14px 0;
+  line-height: 1.4;
+}
+
+.brand-story-content p {
+  color: var(--tumic-spice-cream);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.story-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  background: rgba(255, 248, 239, 0.05);
+  border: 1px solid rgba(244, 228, 210, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.stat-item .stat-num {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--tumic-saffron);
+}
+
+.stat-item .stat-label {
+  font-size: 0.75rem;
+  color: var(--tumic-spice-cream);
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   15. Recipes & FAQ
+   -------------------------------------------------------------------------- */
+.recipes-catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.recipe-tile {
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  transition: var(--transition);
+  min-width: 0;
+  box-sizing: border-box;
+  contain: content;
+}
+
+.recipe-tile:hover {
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-card);
+}
+
+.recipe-dish {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  margin-bottom: 4px;
+}
+
+.recipe-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* FAQ Accordion */
+.faq-accordion {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.faq-item {
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.faq-question {
+  padding: 12px 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--tumic-espresso);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.faq-question::-webkit-details-marker {
+  display: none;
+}
+
+.faq-question::after {
+  content: '+';
+  font-size: 1.1rem;
+  color: var(--tumic-chili);
+  font-weight: 700;
+}
+
+.faq-item[open] .faq-question::after {
+  content: '−';
+}
+
+.faq-answer {
+  padding: 0 16px 12px 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* --------------------------------------------------------------------------
+   16. Footer (Espresso #241B18 & Warm Ivory Text)
+   -------------------------------------------------------------------------- */
+.site-footer {
+  background: var(--tumic-espresso);
+  color: var(--tumic-spice-cream);
+  padding: 40px 0 20px 0;
+  border-top: 1px solid rgba(244, 228, 210, 0.15);
+  width: 100%;
+  overflow: hidden;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+  gap: 28px;
+  margin-bottom: 28px;
+}
+
+.footer-logo-img {
+  height: 52px;
+  width: auto;
+  max-width: 185px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 14px;
+}
+
+.footer-brand p {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--tumic-spice-cream);
+}
+
+.footer-col h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--tumic-ivory);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.footer-links a {
+  font-size: 0.82rem;
+  color: var(--tumic-spice-cream);
+}
+
+.footer-links a:hover {
+  color: var(--tumic-saffron);
+}
+
+.footer-contact p {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.footer-bottom {
+  padding-top: 20px;
+  border-top: 1px solid rgba(244, 228, 210, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--tumic-spice-cream);
+}
+
+.admin-footer-btn {
+  font-size: 0.75rem;
+  color: var(--tumic-spice-cream);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(244, 228, 210, 0.25);
+}
+
+.admin-footer-btn:hover {
+  color: var(--tumic-ivory);
+  border-color: var(--tumic-saffron);
+}
+
+/* --------------------------------------------------------------------------
+   17. Cart Slide-Over Drawer
+   -------------------------------------------------------------------------- */
+.cart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 27, 24, 0.55);
+  z-index: 4000;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.cart-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.cart-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 380px;
+  background: var(--tumic-ivory);
+  z-index: 4100;
+  transform: translateX(100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s ease;
+  box-shadow: -8px 0 24px rgba(36, 27, 24, 0.15);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.cart-drawer.open {
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.cart-drawer-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--tumic-spice-cream);
+}
+
+.cart-drawer-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+}
+
+.cart-items-count-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.cart-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cart-empty-state {
+  text-align: center;
+  padding: 36px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-item-card {
+  display: grid;
+  grid-template-columns: 50px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: var(--tumic-spice-cream);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+}
+
+.cart-item-img-wrapper {
+  width: 50px;
+  height: 50px;
+  background: var(--tumic-ivory);
+  border-radius: var(--radius-xs);
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-item-img-wrapper img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.cart-item-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  line-height: 1.2;
+}
+
+.cart-item-variant {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.cart-item-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.cart-item-price {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--tumic-chili);
+}
+
+.cart-item-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xs);
+}
+
+.cart-stepper-btn {
+  width: 20px;
+  height: 24px;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+}
+
+.cart-stepper-val {
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+}
+
+.cart-item-remove-btn {
+  color: var(--text-subtle);
+  font-size: 0.85rem;
+  padding: 2px;
+}
+
+.cart-item-remove-btn:hover {
+  color: var(--tumic-chili);
+}
+
+.cart-drawer-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-light);
+  background: var(--tumic-ivory);
+}
+
+.cart-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.cart-summary-row.total-row {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--tumic-espresso);
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-light);
+  margin-bottom: 10px;
+}
+
+.total-amount-highlight {
+  color: var(--tumic-chili);
+  font-size: 1.15rem;
+}
+
+.cart-free-shipping-tag {
+  color: var(--tumic-herb);
+  font-weight: 700;
+  font-size: 0.72rem;
+  background: var(--accent-green-light);
+  padding: 2px 5px;
+  border-radius: var(--radius-full);
+}
+
+.btn-proceed-checkout {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   18. Checkout Modal & Order Confirmation
+   -------------------------------------------------------------------------- */
+.checkout-modal-overlay,
+.order-confirmation-overlay,
+.admin-orders-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 27, 24, 0.6);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.checkout-modal-overlay.open,
+.order-confirmation-overlay.open,
+.admin-orders-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.checkout-container,
+.receipt-container,
+.admin-container {
+  background: var(--tumic-ivory);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--border-light);
+}
+
+.checkout-header,
+.admin-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--tumic-spice-cream);
+  z-index: 10;
+}
+
+.checkout-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+}
+
+.checkout-form {
+  padding: 20px;
+}
+
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+}
+
+.checkout-form-col h4,
+.checkout-summary-col h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--tumic-espresso);
+  margin-bottom: 12px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--tumic-espresso);
+  margin-bottom: 3px;
+}
+
+.form-group label .required {
+  color: var(--tumic-chili);
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  color: var(--tumic-espresso);
+  background: var(--tumic-ivory);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--tumic-chili);
+  box-shadow: 0 0 0 2px rgba(167, 25, 53, 0.2);
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.payment-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.payment-option-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--tumic-spice-cream);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.payment-option-card.active {
+  border-color: var(--tumic-chili);
+  background: var(--primary-light);
+}
+
+.checkout-summary-box {
+  background: var(--tumic-spice-cream);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.checkout-items-list {
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkout-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(36, 27, 24, 0.08);
+}
+
+.btn-place-order {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+/* Receipt Modal */
+.receipt-container {
+  max-width: 540px;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.receipt-success-icon {
+  width: 50px;
+  height: 50px;
+  background: var(--accent-green-light);
+  color: var(--tumic-herb);
+  font-size: 1.6rem;
+  font-weight: 800;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.receipt-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--tumic-espresso);
+  margin-bottom: 4px;
+}
+
+.receipt-highlight-card {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  background: var(--tumic-spice-cream);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.receipt-meta-block span {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.receipt-meta-block strong {
+  font-size: 0.78rem;
+  color: var(--tumic-espresso);
+}
+
+.receipt-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.receipt-items-table th {
+  padding: 6px 8px;
+  border-bottom: 2px solid var(--border-light);
+  color: var(--text-muted);
+}
+
+.receipt-items-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.receipt-address-box {
+  background: var(--tumic-spice-cream);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  text-align: left;
+  font-size: 0.82rem;
+  margin-bottom: 14px;
+}
+
+/* Floating WhatsApp Quick Action Button */
+.floating-wa-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 990;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--whatsapp-color);
+  color: #FFFFFF;
+  padding: 9px 14px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+  transition: var(--transition);
+}
+
+.floating-wa-button:hover {
+  background: var(--whatsapp-hover);
+  transform: translateY(-2px);
+}
+
+/* Toast Notifications (Safe Top Placement - Never Obstructs Bottom Checkout) */
+.toast-notify {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: var(--tumic-espresso);
+  color: var(--tumic-ivory);
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 0.84rem;
+  box-shadow: 0 8px 24px rgba(36, 27, 24, 0.28);
+  border: 1px solid rgba(244, 228, 210, 0.25);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, visibility 0.25s ease;
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.toast-notify.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-24px);
+}
+
+/* Processing Overlay */
+#processing-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 27, 24, 0.85);
+  z-index: 7000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--tumic-ivory);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+#processing-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.processing-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(255, 248, 239, 0.2);
+  border-top-color: var(--tumic-chili);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 14px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Admin Dashboard Table */
+.admin-table-wrapper {
+  padding: 14px 20px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.admin-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.admin-orders-table th {
+  padding: 8px;
+  background: var(--tumic-spice-cream);
+  color: var(--tumic-espresso);
+  font-weight: 700;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.admin-orders-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.sync-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.sync-badge.synced {
+  background: var(--accent-green-light);
+  color: var(--tumic-herb);
+}
+
+.sync-badge.failed {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+
+.sync-badge.pending {
+  background: var(--secondary-light);
+  color: var(--tumic-saffron);
+}
+
+/* --------------------------------------------------------------------------
+   19. RESPONSIVE BREAKPOINTS (Mobile 2-Column Grid Focus: 320px–414px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .products-catalogue-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .combos-catalogue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .usecase-catalogue-grid,
+  .pillars-catalogue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    text-align: center;
+  }
+
+  .hero-content {
+    align-items: center;
+  }
+
+  .hero-description {
+    margin: 0 auto;
+  }
+
+  .hero-ctas {
+    justify-content: center;
+  }
+
+  .brand-story-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-height-desktop: var(--header-height-mobile);
+  }
+
+  .site-header {
+    height: var(--header-height-mobile);
+    padding: 0;
+  }
+
+  .header-inner {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Mobile Prominent Centered Brand Logo (Noticeably Larger & Crisp) */
+  .brand-logo {
+    justify-self: center;
+    text-align: center;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .brand-logo-img {
+    height: 48px;
+    max-width: 165px;
+  }
+
+  .header-nav,
+  .desktop-action {
+    display: none !important;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-section {
+    padding: 20px 0 32px 0;
+  }
+
+  .section {
+    padding: 36px 0;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .section-header {
+    margin-bottom: 20px;
+  }
+
+  /* Strict 2-Column Mobile Product Grid (Zero Overflow) */
+  .products-catalogue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .product-tile {
+    padding: 6px;
+  }
+
+  .product-tile-media {
+    margin-bottom: 5px;
+  }
+
+  .tile-title {
+    font-size: 0.82rem;
+  }
+
+  .tile-hindi {
+    font-size: 0.68rem;
+    margin-bottom: 3px;
+  }
+
+  .tile-price {
+    font-size: 0.95rem;
+  }
+
+  .btn-tile-add {
+    padding: 5px 6px;
+    font-size: 0.75rem;
+  }
+
+  .combos-catalogue-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .usecase-catalogue-grid,
+  .pillars-catalogue-grid,
+  .recipes-catalogue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .usecase-tile,
+  .pillar-tile,
+  .recipe-tile {
+    padding: 10px 8px;
+  }
+
+  .checkout-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .form-row-2,
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .receipt-highlight-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .floating-wa-button {
+    bottom: 14px;
+    right: 14px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .floating-wa-text {
+    display: none;
+  }
+
+  /* Safe Mobile Toast Positioning: Prevents overlap with Cart Drawer Header & Close ✕ Button */
+  .toast-notify {
+    top: 72px;
+    font-size: 0.82rem;
+    padding: 8px 16px;
+  }
+
+  .toast-notify.hidden {
+    transform: translateX(-50%) translateY(-16px);
+  }
+}
+
+@media (max-width: 414px) {
+  .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .brand-logo-img {
+    height: 45px;
+    max-width: 155px;
+  }
+
+  .products-catalogue-grid {
+    gap: 6px;
+  }
+
+  .usecase-catalogue-grid,
+  .pillars-catalogue-grid,
+  .recipes-catalogue-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sheet-variants-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 340px) {
+  .brand-logo-img {
+    height: 40px;
+    max-width: 135px;
+  }
+}

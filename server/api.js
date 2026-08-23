@@ -3,15 +3,28 @@ import { syncOrderToOdoo, isOdooConfigured, getOdooConfig, testOdooConnection, u
 import { sendOrderWhatsAppNotification, isWhatsAppConfigured, getWhatsAppConfig } from './whatsapp.js';
 
 function parseRequestBody(req) {
-  if (req.body && typeof req.body === 'object') {
-    return Promise.resolve(req.body);
-  }
-  if (typeof req.body === 'string') {
-    try {
-      return Promise.resolve(JSON.parse(req.body));
-    } catch (err) {
-      return Promise.resolve({});
+  if (req.body) {
+    if (Buffer.isBuffer(req.body)) {
+      try {
+        const str = req.body.toString('utf-8');
+        return Promise.resolve(str ? JSON.parse(str) : {});
+      } catch (err) {
+        return Promise.resolve({});
+      }
     }
+    if (typeof req.body === 'object') {
+      return Promise.resolve(req.body);
+    }
+    if (typeof req.body === 'string') {
+      try {
+        return Promise.resolve(JSON.parse(req.body));
+      } catch (err) {
+        return Promise.resolve({});
+      }
+    }
+  }
+  if (req.readableEnded || req.complete) {
+    return Promise.resolve({});
   }
   return new Promise((resolve, reject) => {
     let body = '';
@@ -46,8 +59,23 @@ function sendJson(res, statusCode, data) {
 
 export function createApiMiddleware() {
   return async function apiMiddleware(req, res, next) {
-    const url = new URL(req.url || '/', `http://${req.headers?.host || 'localhost'}`);
-    const pathname = url.pathname;
+    // Extract pathname safely across local Vite Connect, Vercel Serverless, and Proxies
+    let rawPath = req.headers?.['x-matched-path'] || req.headers?.['x-forwarded-url'] || req.originalUrl || req.url || '/';
+    
+    // In Vercel rewrites, destination could be /api/index.js or /api/index
+    if (rawPath.startsWith('/api/index.js') || rawPath.startsWith('/api/index') || rawPath === '/api') {
+      if (req.headers?.['x-matched-path']) {
+        rawPath = req.headers['x-matched-path'];
+      } else if (req.query?.slug) {
+        const slug = Array.isArray(req.query.slug) ? req.query.slug.join('/') : req.query.slug;
+        rawPath = `/api/${slug}`;
+      }
+    }
+
+    const host = req.headers?.['x-forwarded-host'] || req.headers?.host || 'localhost';
+    const parsedUrl = new URL(rawPath.startsWith('/') ? `http://${host}${rawPath}` : rawPath);
+    const pathname = parsedUrl.pathname;
+    const searchParams = parsedUrl.searchParams;
 
     // Handle CORS preflight
     if (req.method === 'OPTIONS' && pathname.startsWith('/api/')) {
@@ -209,6 +237,8 @@ export function createApiMiddleware() {
           odooSalesOrder: odooResult.salesOrderName || null,
           odooInvoice: odooResult.invoiceName || odooResult.invoiceNumber || null,
           odooError: odooResult.success ? null : odooResult.error,
+          odooEmailSent: Boolean(odooResult.emailSent),
+          odooEmailError: odooResult.emailError || null,
           whatsappSent: Boolean(waResult.sent),
           whatsappMessageId: waResult.messageId || null,
           whatsappError: waResult.sent ? null : waResult.error
@@ -222,7 +252,8 @@ export function createApiMiddleware() {
     // 5. Order Status Lookup Endpoint (For Customers & Tracking)
     if (req.method === 'GET' && pathname === '/api/orders/lookup') {
       try {
-        const query = (url.searchParams.get('query') || '').toLowerCase().trim().replace(/#/g, '');
+        const queryParam = searchParams.get('query') || (req.query && req.query.query) || '';
+        const query = queryParam.toLowerCase().trim().replace(/#/g, '');
         if (!query) {
           return sendJson(res, 400, { success: false, error: 'Please enter an Order ID or Mobile Number.' });
         }
@@ -285,7 +316,9 @@ export function createApiMiddleware() {
         return sendJson(res, 200, {
           success: odooResult.success,
           order: updated,
-          odooError: odooResult.success ? null : odooResult.error
+          odooError: odooResult.success ? null : odooResult.error,
+          odooEmailSent: Boolean(odooResult.emailSent),
+          odooEmailError: odooResult.emailError || null
         });
       } catch (err) {
         console.error('[API /api/admin/orders/retry-sync] Error:', err);

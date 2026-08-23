@@ -95,10 +95,18 @@ export function updateOrderOdooStatus(orderId, odooResult) {
     order.odooInvoiceName = odooResult.invoiceName;
     order.odooSyncedAt = new Date().toISOString();
     order.odooError = null;
+    order.odooEmailSent = Boolean(odooResult.emailSent);
+    if (odooResult.emailSent) {
+      order.odooEmailSentAt = new Date().toISOString();
+      order.odooEmailError = null;
+    } else if (odooResult.emailError) {
+      order.odooEmailError = odooResult.emailError;
+    }
   } else {
     order.odooSyncStatus = 'failed';
     order.odooError = odooResult.error || 'Odoo sync failed';
     order.odooFailedAt = new Date().toISOString();
+    order.odooEmailSent = false;
   }
 
   order.updatedAt = new Date().toISOString();

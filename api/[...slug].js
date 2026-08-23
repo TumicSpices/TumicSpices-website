@@ -3,8 +3,8 @@ import { createApiMiddleware } from '../server/api.js';
 const apiMiddleware = createApiMiddleware();
 
 /**
- * Vercel Serverless Function entry point for all /api/* routes.
- * Seamlessly handles requests in production Vercel deployment.
+ * Vercel Catch-All Serverless Function for all /api/* routes.
+ * Ensures direct serverless routing for any dynamic API path.
  */
 export default async function handler(req, res) {
   return new Promise((resolve) => {
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       }
       resolve();
     }).then(resolve).catch((err) => {
-      console.error('[Vercel API Serverless Handler Error]:', err);
+      console.error('[Vercel Serverless Handler Error]:', err);
       if (!res.writableEnded) {
         if (typeof res.status === 'function' && typeof res.json === 'function') {
           res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });

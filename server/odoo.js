@@ -594,8 +594,9 @@ export async function sendOdooInvoiceEmail(invoiceId) {
     });
 
     if (!action || !action.res_model || !action.context) {
-      console.warn(`[Odoo Email] Invoice email failed: Could not retrieve send wizard for Invoice ID ${invoiceId}.`);
-      return false;
+      const warnMsg = `Could not retrieve send wizard for Invoice ID ${invoiceId}`;
+      console.warn(`[Odoo Email] Invoice email failed: ${warnMsg}`);
+      return { sent: false, error: warnMsg };
     }
 
     const wizardModel = action.res_model;
@@ -609,8 +610,9 @@ export async function sendOdooInvoiceEmail(invoiceId) {
 
     const wizardId = Array.isArray(wizardRes) ? (wizardRes[0].id || wizardRes[0]) : (wizardRes.id || wizardRes);
     if (!wizardId) {
-      console.warn(`[Odoo Email] Invoice email failed: Could not create wizard for Invoice ID ${invoiceId}.`);
-      return false;
+      const warnMsg = `Could not create wizard instance for Invoice ID ${invoiceId}`;
+      console.warn(`[Odoo Email] Invoice email failed: ${warnMsg}`);
+      return { sent: false, error: warnMsg };
     }
 
     // 3. Trigger the send action on the wizard
@@ -620,10 +622,10 @@ export async function sendOdooInvoiceEmail(invoiceId) {
     });
 
     console.log(`[Odoo Email] Invoice email sent: Successfully dispatched email for Invoice ID ${invoiceId}.`);
-    return true;
+    return { sent: true };
   } catch (err) {
     console.error(`[Odoo Email] Invoice email failed for Invoice ID ${invoiceId}:`, err.message);
-    return false;
+    return { sent: false, error: err.message };
   }
 }
 
@@ -646,8 +648,9 @@ export async function syncOrderToOdoo(order) {
     const invResult = await createDirectInvoice(order, partnerId);
 
     // 3. Automatically send the invoice email
+    let emailResult = { sent: false };
     if (invResult.invoiceId) {
-      await sendOdooInvoiceEmail(invResult.invoiceId);
+      emailResult = await sendOdooInvoiceEmail(invResult.invoiceId);
     }
 
     return {
@@ -658,7 +661,9 @@ export async function syncOrderToOdoo(order) {
       invoiceId: invResult.invoiceId,
       invoiceName: invResult.invoiceNumber,
       invoiceNumber: invResult.invoiceNumber,
-      amountTotal: invResult.amountTotal
+      amountTotal: invResult.amountTotal,
+      emailSent: Boolean(emailResult.sent),
+      emailError: emailResult.sent ? null : emailResult.error
     };
   } catch (err) {
     console.error(`[Odoo Sync Error for Order #${order.id}]:`, err.message);

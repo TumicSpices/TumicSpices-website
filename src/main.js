@@ -783,23 +783,13 @@ async function handlePlaceOrder(e) {
     overlay.id = 'processing-overlay';
     overlay.innerHTML = `
       <div class="processing-spinner"></div>
-      <div style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">Processing your order...</div>
-      <div id="processing-timer" style="font-size: 1.5rem; font-weight: 800; color: var(--accent-gold); margin-bottom: 8px;">00:00</div>
-      <div style="font-size: 0.84rem; color: #9CA3AF;">Synchronizing with Odoo Enterprise. Please don't close this page.</div>
+      <div style="font-size: 1.18rem; font-weight: 700; color: var(--tumic-ivory); margin-bottom: 6px; letter-spacing: -0.01em;">Placing your order...</div>
+      <div style="font-size: 0.88rem; color: var(--tumic-spice-cream); opacity: 0.9; text-align: center; max-width: 280px;">Securing your fresh spices & preparing confirmation...</div>
     `;
     document.body.appendChild(overlay);
   }
   
   overlay.classList.add('active');
-  const timerEl = document.getElementById('processing-timer');
-  let seconds = 0;
-  timerEl.textContent = '00:00';
-  const timerInterval = setInterval(() => {
-    seconds++;
-    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-    const s = String(seconds % 60).padStart(2, '0');
-    timerEl.textContent = `${m}:${s}`;
-  }, 1000);
 
   let finalOrder = orderPayload;
 
@@ -813,7 +803,7 @@ async function handlePlaceOrder(e) {
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-      throw new Error(data.error || 'Unable to confirm order with Odoo');
+      throw new Error(data.error || 'Unable to place order. Please try again.');
     }
 
     if (data.order) {
@@ -822,7 +812,6 @@ async function handlePlaceOrder(e) {
   } catch (err) {
     console.error('[Checkout Error]:', err.message);
     showToast(`❌ Order placement failed: ${err.message}`);
-    clearInterval(timerInterval);
     overlay.classList.remove('active');
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -830,7 +819,6 @@ async function handlePlaceOrder(e) {
     }
     return;
   } finally {
-    clearInterval(timerInterval);
     overlay.classList.remove('active');
     if (submitBtn) {
       submitBtn.disabled = false;

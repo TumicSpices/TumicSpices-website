@@ -1,5 +1,5 @@
 import { getAllOrders, getOrderById, saveOrder, updateOrderOdooStatus, updateOrderWhatsAppStatus } from './ordersStore.js';
-import { syncOrderToOdoo, isOdooConfigured, getOdooConfig, testOdooConnection, updateEnvFile } from './odoo.js';
+import { syncOrderToOdoo, fetchOdooOrders, isOdooConfigured, getOdooConfig, testOdooConnection, updateEnvFile } from './odoo.js';
 import { sendOrderWhatsAppNotification, isWhatsAppConfigured, getWhatsAppConfig } from './whatsapp.js';
 
 function parseRequestBody(req) {
@@ -321,11 +321,22 @@ export function createApiMiddleware() {
         }
 
         const orders = getAllOrders();
-        const found = orders.find(o => 
+        let found = orders.find(o => 
           (o.id && o.id.toLowerCase().includes(query)) ||
           (o.customer?.phone && o.customer.phone.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
           (o.odooInvoiceName && o.odooInvoiceName.toLowerCase().includes(query))
         );
+
+        if (!found && isOdooConfigured()) {
+          try {
+            const odooOrders = await fetchOdooOrders(50);
+            found = odooOrders.find(o => 
+              (o.id && o.id.toLowerCase().includes(query)) ||
+              (o.customer?.phone && o.customer.phone.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
+              (o.odooInvoiceName && o.odooInvoiceName.toLowerCase().includes(query))
+            );
+          } catch (e) {}
+        }
 
         if (!found) {
           return sendJson(res, 404, { success: false, error: `No order found matching "${query}". Please check the Order ID or phone number.` });
@@ -340,18 +351,59 @@ export function createApiMiddleware() {
       }
     }
 
-    // 5. Admin Orders List (Protected)
+    // 5. Admin Orders List (Protected & Real-time Odoo Sync)
     if (req.method === 'GET' && pathname === '/api/admin/orders') {
       if (!verifyAdminAuth(req)) {
         return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required.' });
       }
       try {
-        const orders = getAllOrders();
+        const localOrders = getAllOrders();
+        let odooOrders = [];
+        try {
+          odooOrders = await fetchOdooOrders(100);
+        } catch (oe) {
+          console.warn('[API /api/admin/orders] Odoo fetch warning:', oe.message);
+        }
+
+        // Merge without duplicates: Odoo records + any local-only pending orders
+        const ordersMap = new Map();
+
+        // 1. Add Odoo orders first (Cloud Source of Truth)
+        odooOrders.forEach(o => {
+          if (o.id) ordersMap.set(o.id.toLowerCase(), o);
+          if (o.odooInvoiceName) ordersMap.set(o.odooInvoiceName.toLowerCase(), o);
+          if (o.odooInvoiceId) ordersMap.set(`odoo_inv_${o.odooInvoiceId}`, o);
+        });
+
+        // 2. Add or enrich with local orders
+        localOrders.forEach(lo => {
+          const key1 = lo.id ? lo.id.toLowerCase() : null;
+          const key2 = lo.odooInvoiceName ? lo.odooInvoiceName.toLowerCase() : null;
+          const key3 = lo.odooInvoiceId ? `odoo_inv_${lo.odooInvoiceId}` : null;
+
+          const existing = (key1 && ordersMap.get(key1)) || (key2 && ordersMap.get(key2)) || (key3 && ordersMap.get(key3));
+          if (existing) {
+            if (lo.customer?.phone && !existing.customer?.phone) existing.customer.phone = lo.customer.phone;
+            if (lo.customer?.address && !existing.customer?.address) existing.customer.address = lo.customer.address;
+            if (lo.customer?.pin && !existing.customer?.pin) existing.customer.pin = lo.customer.pin;
+            if (lo.paymentMethod) existing.paymentMethod = lo.paymentMethod;
+            if (lo.items && lo.items.length > 0 && (!existing.items || existing.items.length === 0)) existing.items = lo.items;
+          } else {
+            ordersMap.set(key1 || `local_${Date.now()}_${Math.random()}`, lo);
+          }
+        });
+
+        const unifiedOrders = Array.from(new Set(ordersMap.values())).sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.date || 0).getTime();
+          const dateB = new Date(b.createdAt || b.date || 0).getTime();
+          return dateB - dateA;
+        });
+
         return sendJson(res, 200, {
           success: true,
-          total: orders.length,
+          total: unifiedOrders.length,
           odooConfigured: isOdooConfigured(),
-          orders: orders
+          orders: unifiedOrders
         });
       } catch (err) {
         console.error('[API /api/admin/orders] Error:', err);

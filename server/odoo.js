@@ -694,3 +694,128 @@ export async function syncOrderToOdoo(order) {
   }
 }
 
+/**
+ * Fetches and unifies all live customer orders from Odoo 19 Enterprise (Single Source of Truth).
+ */
+export async function fetchOdooOrders(limit = 100) {
+  if (!isOdooConfigured()) return [];
+
+  try {
+    const invoices = await callOdooJson2('account.move', 'search_read', {
+      domain: [['move_type', '=', 'out_invoice']],
+      fields: [
+        'id',
+        'name',
+        'ref',
+        'partner_id',
+        'invoice_date',
+        'amount_total',
+        'amount_untaxed',
+        'state',
+        'payment_state',
+        'invoice_line_ids',
+        'create_date'
+      ],
+      limit: limit,
+      order: 'id desc'
+    });
+
+    if (!invoices || invoices.length === 0) return [];
+
+    const partnerIds = [...new Set(invoices.map(inv => inv.partner_id?.[0]).filter(Boolean))];
+    let partnersMap = {};
+    if (partnerIds.length > 0) {
+      try {
+        const partners = await callOdooJson2('res.partner', 'search_read', {
+          domain: [['id', 'in', partnerIds]],
+          fields: ['id', 'name', 'phone', 'email', 'street', 'city', 'state_id', 'zip']
+        });
+        (partners || []).forEach(p => {
+          partnersMap[p.id] = p;
+        });
+      } catch (pe) {
+        console.warn('[Odoo Orders Fetch] Partner fetch warning:', pe.message);
+      }
+    }
+
+    const lineIds = [...new Set(invoices.flatMap(inv => inv.invoice_line_ids || []))];
+    let linesByMoveId = {};
+    if (lineIds.length > 0) {
+      try {
+        const lines = await callOdooJson2('account.move.line', 'search_read', {
+          domain: [['id', 'in', lineIds], ['display_type', '=', 'product']],
+          fields: ['id', 'move_id', 'product_id', 'name', 'quantity', 'price_unit', 'price_subtotal']
+        });
+        (lines || []).forEach(line => {
+          const moveId = line.move_id?.[0];
+          if (moveId) {
+            if (!linesByMoveId[moveId]) linesByMoveId[moveId] = [];
+            linesByMoveId[moveId].push(line);
+          }
+        });
+      } catch (le) {
+        console.warn('[Odoo Orders Fetch] Invoice lines fetch warning:', le.message);
+      }
+    }
+
+    return invoices.map(inv => {
+      const partner = partnersMap[inv.partner_id?.[0]] || {};
+      const lines = linesByMoveId[inv.id] || [];
+
+      const items = lines.map(line => {
+        const weightMatch = line.name?.match(/(\d+\s*(?:g|kg|gm|ml|l))/i);
+        const weight = weightMatch ? weightMatch[1] : '100g';
+        const cleanName = line.name ? line.name.replace(/\s*\([^)]+\)\s*$/, '').trim() : 'Spice Product';
+
+        return {
+          id: `line_${line.id}`,
+          name: cleanName,
+          weight: weight,
+          price: Number(line.price_unit) || 0,
+          quantity: Number(line.quantity) || 1
+        };
+      });
+
+      const orderId = inv.ref || (inv.name ? `TUMIC-${inv.name.replace(/\D/g, '')}` : `OD-${inv.id}`);
+      const dateStr = inv.create_date || inv.invoice_date || new Date().toISOString();
+
+      return {
+        id: orderId,
+        date: new Date(dateStr).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }),
+        createdAt: new Date(dateStr).toISOString(),
+        customer: {
+          name: partner.name || inv.partner_id?.[1] || 'Store Customer',
+          phone: partner.phone || '',
+          email: partner.email || '',
+          address: partner.street || '',
+          city: partner.city || 'Kanpur',
+          state: (partner.state_id && partner.state_id[1]) || 'Uttar Pradesh',
+          pin: partner.zip || ''
+        },
+        items: items,
+        subtotal: Number(inv.amount_untaxed) || Number(inv.amount_total) || 0,
+        deliveryFee: 0,
+        totalAmount: Number(inv.amount_total) || 0,
+        paymentMethod: 'Cash on Delivery (COD)',
+        paymentStatus: inv.payment_state === 'paid' ? 'paid' : 'unpaid',
+        orderStatus: inv.state === 'posted' ? 'Confirmed' : 'Draft',
+        odooSyncStatus: 'synced',
+        odooPartnerId: inv.partner_id?.[0] || null,
+        odooOrderId: null,
+        odooOrderName: null,
+        odooInvoiceId: inv.id,
+        odooInvoiceName: inv.name,
+        odooSyncedAt: inv.create_date || new Date().toISOString(),
+        odooEmailSent: true
+      };
+    });
+  } catch (err) {
+    console.error('[Odoo Orders Fetch Error]:', err.message);
+    return [];
+  }
+}
+

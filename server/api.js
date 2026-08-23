@@ -241,6 +241,8 @@ export function createApiMiddleware() {
           odooError: odooResult.success ? null : odooResult.error,
           odooEmailSent: Boolean(odooResult.emailSent),
           odooEmailError: odooResult.emailError || null,
+          adminEmailSent: Boolean(odooResult.adminEmailSent),
+          adminEmailRecipient: odooResult.adminEmailRecipient || null,
           whatsappSent: Boolean(waResult.sent),
           whatsappMessageId: waResult.messageId || null,
           whatsappError: waResult.sent ? null : waResult.error

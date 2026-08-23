@@ -102,11 +102,20 @@ export function updateOrderOdooStatus(orderId, odooResult) {
     } else if (odooResult.emailError) {
       order.odooEmailError = odooResult.emailError;
     }
+    order.adminEmailSent = Boolean(odooResult.adminEmailSent);
+    if (odooResult.adminEmailSent) {
+      order.adminEmailSentAt = new Date().toISOString();
+      order.adminEmailRecipient = odooResult.adminEmailRecipient || 'realtumicspices@gmail.com';
+      order.adminEmailError = null;
+    } else if (odooResult.adminEmailError) {
+      order.adminEmailError = odooResult.adminEmailError;
+    }
   } else {
     order.odooSyncStatus = 'failed';
     order.odooError = odooResult.error || 'Odoo sync failed';
     order.odooFailedAt = new Date().toISOString();
     order.odooEmailSent = false;
+    order.adminEmailSent = false;
   }
 
   order.updatedAt = new Date().toISOString();

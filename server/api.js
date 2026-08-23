@@ -192,6 +192,8 @@ export function createApiMiddleware() {
         // Generate Order ID if not supplied
         const orderId = orderData.id || `TUMIC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
         
+        console.log(`[API /api/orders/create] Order #${orderId} received. Items count: ${orderData.items?.length || 0}. Odoo configured: ${isOdooConfigured()}`);
+
         const initialOrder = {
           ...orderData,
           id: orderId,
@@ -211,7 +213,7 @@ export function createApiMiddleware() {
           odooResult = await syncOrderToOdoo(saved);
           updateOrderOdooStatus(orderId, odooResult);
         } else {
-          console.log(`[API] Odoo credentials not configured in .env; saved order #${orderId} locally.`);
+          console.warn(`[API] ODOO SYNC SKIPPED for Order #${orderId}: ODOO_API_KEY environment variable is not configured in Vercel.`);
         }
 
         const orderWithOdoo = getOrderById(orderId) || saved;

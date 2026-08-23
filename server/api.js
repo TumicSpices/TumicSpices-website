@@ -57,6 +57,27 @@ function sendJson(res, statusCode, data) {
   res.end(JSON.stringify(data));
 }
 
+function getAdminSecretPin() {
+  getOdooConfig(); // Ensures .env is parsed if available
+  return (process.env.ADMIN_SECRET_PIN || '8604').trim();
+}
+
+function verifyAdminAuth(req) {
+  const adminPin = getAdminSecretPin();
+  const authHeader = req.headers?.['authorization'] || '';
+  const pinHeader = req.headers?.['x-admin-pin'] || '';
+
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    if (token && token === adminPin) return true;
+  }
+
+  if (pinHeader && pinHeader.trim() === adminPin) return true;
+  if (req.query?.pin && req.query.pin.trim() === adminPin) return true;
+
+  return false;
+}
+
 export function createApiMiddleware() {
   return async function apiMiddleware(req, res, next) {
     // Extract pathname safely across local Vite Connect, Vercel Serverless, and Proxies
@@ -82,32 +103,66 @@ export function createApiMiddleware() {
       res.statusCode = 204;
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-pin');
       return res.end();
     }
 
-    // 1. Health check, Odoo & WhatsApp Config Status (Safe - Zero Secret Exposure)
-    if (req.method === 'GET' && pathname === '/api/odoo/status') {
-      const config = getOdooConfig();
-      const waConfig = getWhatsAppConfig();
-      return sendJson(res, 200, {
-        status: 'online',
-        odooConfigured: isOdooConfigured(),
-        hasUrl: Boolean(config.url && config.url !== 'https://your-instance.odoo.com'),
-        hasDb: Boolean(config.db),
-        hasUsername: Boolean(config.username),
-        hasApiKey: Boolean(config.apiKey),
-        odooUrl: config.url !== 'https://your-instance.odoo.com' ? config.url : '',
-        odooDb: config.db,
-        odooUsername: config.username,
-        whatsappConfigured: isWhatsAppConfigured(),
-        whatsappRecipient: waConfig.recipientPhone ? `+${waConfig.recipientPhone}` : '',
-        environment: process.env.NODE_ENV || 'development'
-      });
+    // 0. Admin PIN Verification Endpoint
+    if (req.method === 'POST' && pathname === '/api/admin/verify') {
+      try {
+        const body = await parseRequestBody(req);
+        const pin = String(body.pin || '').trim();
+        const adminPin = getAdminSecretPin();
+
+        if (pin && pin === adminPin) {
+          return sendJson(res, 200, {
+            success: true,
+            authenticated: true,
+            message: 'Admin authorization successful.'
+          });
+        }
+        return sendJson(res, 401, {
+          success: false,
+          authenticated: false,
+          error: 'Invalid Admin Secret PIN.'
+        });
+      } catch (err) {
+        return sendJson(res, 400, { success: false, error: err.message });
+      }
     }
 
-    // 2. Phase 1 Test Function: Test Connection with Odoo Enterprise Instance
+    // 1. Health check & Odoo status (Protected details: sensitive URLs & usernames only visible to authenticated admins)
+    if (req.method === 'GET' && pathname === '/api/odoo/status') {
+      const isAuthorized = verifyAdminAuth(req);
+      const config = getOdooConfig();
+      const waConfig = getWhatsAppConfig();
+
+      const responseData = {
+        status: 'online',
+        odooConfigured: isOdooConfigured()
+      };
+
+      if (isAuthorized) {
+        responseData.hasUrl = Boolean(config.url && config.url !== 'https://your-instance.odoo.com');
+        responseData.hasDb = Boolean(config.db);
+        responseData.hasUsername = Boolean(config.username);
+        responseData.hasApiKey = Boolean(config.apiKey);
+        responseData.odooUrl = config.url !== 'https://your-instance.odoo.com' ? config.url : '';
+        responseData.odooDb = config.db;
+        responseData.odooUsername = config.username;
+        responseData.whatsappConfigured = isWhatsAppConfigured();
+        responseData.whatsappRecipient = waConfig.recipientPhone ? `+${waConfig.recipientPhone}` : '';
+        responseData.environment = process.env.NODE_ENV || 'production';
+      }
+
+      return sendJson(res, 200, responseData);
+    }
+
+    // 2. Admin Test Connection with Odoo Enterprise Instance (Protected)
     if (req.method === 'GET' && pathname === '/api/odoo/test-connection') {
+      if (!verifyAdminAuth(req)) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required.' });
+      }
       try {
         const result = await testOdooConnection();
         return sendJson(res, result.connected ? 200 : 400, result);
@@ -116,8 +171,11 @@ export function createApiMiddleware() {
       }
     }
 
-    // 3. Save Odoo Config Endpoint (Admin setup - server-side .env update)
+    // 3. Save Odoo Config Endpoint (Admin-only server-side update) (Protected)
     if (req.method === 'POST' && pathname === '/api/odoo/save-config') {
+      if (!verifyAdminAuth(req)) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required.' });
+      }
       try {
         const body = await parseRequestBody(req);
         const { odooUrl, odooDb, odooUsername, odooApiKey } = body;
@@ -282,8 +340,11 @@ export function createApiMiddleware() {
       }
     }
 
-    // 5. Admin Orders List
+    // 5. Admin Orders List (Protected)
     if (req.method === 'GET' && pathname === '/api/admin/orders') {
+      if (!verifyAdminAuth(req)) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required.' });
+      }
       try {
         const orders = getAllOrders();
         return sendJson(res, 200, {
@@ -298,8 +359,11 @@ export function createApiMiddleware() {
       }
     }
 
-    // 6. Admin Retry Odoo Sync
+    // 6. Admin Retry Odoo Sync (Protected)
     if (req.method === 'POST' && pathname === '/api/admin/orders/retry-sync') {
+      if (!verifyAdminAuth(req)) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required.' });
+      }
       try {
         const body = await parseRequestBody(req);
         const { orderId } = body;

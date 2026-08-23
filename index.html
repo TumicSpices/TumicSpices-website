@@ -725,11 +725,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p>© 2026 Tumic Spices. All Rights Reserved. Asli Masala, Tumic Wala.</p>
-        <button id="admin-orders-toggle-btn" class="admin-footer-btn" title="Store Manager Order Dashboard & Odoo Sync">
-          <span>⚙️ Admin Orders & Odoo</span>
-          <span id="admin-orders-badge" style="width: 8px; height: 8px; background: #39704A; border-radius: 50%; display: inline-block;"></span>
-        </button>
+        <p>© 2026 Tumic Spices. All Rights Reserved. Asli Masala, Tumic Wala. <a href="#admin" id="admin-portal-link" style="color: transparent; text-decoration: none; font-size: 0.7rem; cursor: default; user-select: none;" tabindex="-1" title="Manager Gateway">🔒</a></p>
       </div>
 
     </div>
@@ -1036,6 +1032,29 @@
   </div>
 
   <!-- ==========================================================================
+       ADMIN AUTHORIZATION PIN MODAL
+       ========================================================================== -->
+  <div id="admin-pin-modal" class="admin-orders-overlay">
+    <div class="receipt-container" style="max-width: 380px; padding: 26px 24px; text-align: center;">
+      <div style="font-size: 2.2rem; margin-bottom: 8px;">🔐</div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--tumic-espresso); margin-bottom: 6px;">Manager Authorization</h3>
+      <p style="font-size: 0.82rem; color: var(--tumic-taupe); margin-bottom: 18px;">
+        Please enter your Admin Secret PIN to unlock the store dashboard.
+      </p>
+      <form id="admin-pin-form">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <input type="password" id="admin-pin-input" class="form-input" placeholder="••••" maxlength="12" required style="text-align: center; letter-spacing: 0.25em; font-size: 1.25rem; font-weight: 800;" autocomplete="current-password">
+        </div>
+        <div id="admin-pin-error" style="display: none; color: #DC2626; font-size: 0.8rem; margin-bottom: 12px; font-weight: 600;"></div>
+        <div style="display: flex; gap: 8px; justify-content: center;">
+          <button type="button" id="admin-pin-cancel-btn" class="btn btn-outline btn-sm">Cancel</button>
+          <button type="submit" id="admin-pin-submit-btn" class="btn btn-primary btn-sm">Unlock Dashboard 🔒</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
        ADMIN ORDERS & ODOO ENTERPRISE DASHBOARD MODAL
        ========================================================================== -->
   <div id="admin-orders-modal" class="admin-orders-overlay">
@@ -1050,7 +1069,8 @@
           <span id="admin-odoo-status-pill" class="sync-badge pending">
             <span id="admin-odoo-status-text">Checking Odoo...</span>
           </span>
-          <button id="admin-refresh-orders-btn" class="btn btn-outline btn-sm">🔄</button>
+          <button id="admin-refresh-orders-btn" class="btn btn-outline btn-sm" title="Refresh Orders">🔄</button>
+          <button id="admin-logout-btn" class="btn btn-outline btn-sm" title="Lock & Logout" style="color: #DC2626; border-color: #FCA5A5;">🔒 Lock</button>
           <button id="admin-modal-close" class="drawer-close-btn" aria-label="Close Admin Modal">✕</button>
         </div>
       </div>

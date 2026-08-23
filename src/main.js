@@ -1057,9 +1057,92 @@ function initTrackOrder() {
 }
 
 // ==========================================================================
-// 10. Admin Orders & Odoo Dashboard
+// ==========================================================================
+// 10. Admin Orders & Odoo Dashboard (PIN Protected)
 // ==========================================================================
 let adminOrdersCache = [];
+const ADMIN_PIN_SESSION_KEY = 'tumic_admin_pin';
+
+function getAdminSessionPin() {
+  return sessionStorage.getItem(ADMIN_PIN_SESSION_KEY) || '';
+}
+
+function setAdminSessionPin(pin) {
+  sessionStorage.setItem(ADMIN_PIN_SESSION_KEY, pin);
+}
+
+function clearAdminSessionPin() {
+  sessionStorage.removeItem(ADMIN_PIN_SESSION_KEY);
+}
+
+function getAdminHeaders() {
+  const pin = getAdminSessionPin();
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${pin}`,
+    'x-admin-pin': pin
+  };
+}
+
+function showAdminPinModal() {
+  const pinModal = document.getElementById('admin-pin-modal');
+  const pinInput = document.getElementById('admin-pin-input');
+  const pinError = document.getElementById('admin-pin-error');
+  if (pinModal) {
+    if (pinError) {
+      pinError.style.display = 'none';
+      pinError.textContent = '';
+    }
+    if (pinInput) {
+      pinInput.value = '';
+    }
+    pinModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      if (pinInput) pinInput.focus();
+    }, 150);
+  }
+}
+
+function closeAdminPinModal() {
+  const pinModal = document.getElementById('admin-pin-modal');
+  if (pinModal) {
+    pinModal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  if (window.location.hash === '#admin') {
+    history.replaceState(null, '', window.location.pathname);
+  }
+}
+
+function openAdminDashboardModal() {
+  const adminModal = document.getElementById('admin-orders-modal');
+  if (adminModal) {
+    adminModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    fetchAdminOrders();
+  }
+}
+
+function closeAdminDashboardModal() {
+  const adminModal = document.getElementById('admin-orders-modal');
+  if (adminModal) {
+    adminModal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  if (window.location.hash === '#admin') {
+    history.replaceState(null, '', window.location.pathname);
+  }
+}
+
+function promptAdminAccess() {
+  const existingPin = getAdminSessionPin();
+  if (existingPin) {
+    openAdminDashboardModal();
+  } else {
+    showAdminPinModal();
+  }
+}
 
 async function fetchAdminOrders() {
   const tbody = document.getElementById('admin-orders-tbody');
@@ -1071,8 +1154,19 @@ async function fetchAdminOrders() {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 24px; color: var(--text-muted);">⏳ Loading orders database...</td></tr>`;
   }
 
+  // 1. Fetch Odoo Status with Admin Authorization
   try {
-    const statusRes = await fetch('/api/odoo/status');
+    const statusRes = await fetch('/api/odoo/status', {
+      headers: getAdminHeaders()
+    });
+    
+    if (statusRes.status === 401) {
+      clearAdminSessionPin();
+      closeAdminDashboardModal();
+      showAdminPinModal();
+      return;
+    }
+
     const statusData = await statusRes.json();
     if (odooStatusPill && odooStatusText) {
       if (statusData.odooConfigured) {
@@ -1098,16 +1192,27 @@ async function fetchAdminOrders() {
     }
   } catch (e) {}
 
+  // 2. Fetch Admin Orders with Admin Authorization
   try {
-    const res = await fetch('/api/admin/orders');
+    const res = await fetch('/api/admin/orders', {
+      headers: getAdminHeaders()
+    });
+
+    if (res.status === 401) {
+      clearAdminSessionPin();
+      closeAdminDashboardModal();
+      showAdminPinModal();
+      return;
+    }
+
     if (res.ok) {
       const data = await res.json();
       adminOrdersCache = data.orders || [];
     } else {
-      adminOrdersCache = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
+      adminOrdersCache = [];
     }
   } catch (err) {
-    adminOrdersCache = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
+    adminOrdersCache = [];
   }
 
   if (totalCountEl) totalCountEl.textContent = adminOrdersCache.length;
@@ -1122,7 +1227,7 @@ function renderAdminOrdersTable(orders) {
     tbody.innerHTML = `
       <tr>
         <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
-          🌶️ No orders found yet.
+          🌶️ No orders found in store database.
         </td>
       </tr>
     `;
@@ -1186,9 +1291,16 @@ function renderAdminOrdersTable(orders) {
       try {
         const res = await fetch('/api/admin/orders/retry-sync', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAdminHeaders(),
           body: JSON.stringify({ orderId })
         });
+
+        if (res.status === 401) {
+          clearAdminSessionPin();
+          closeAdminDashboardModal();
+          showAdminPinModal();
+          return;
+        }
 
         const data = await res.json();
         if (data.success) {
@@ -1206,10 +1318,17 @@ function renderAdminOrdersTable(orders) {
 }
 
 function initAdminDashboard() {
-  const adminToggleBtn = document.getElementById('admin-orders-toggle-btn');
+  const pinModal = document.getElementById('admin-pin-modal');
+  const pinForm = document.getElementById('admin-pin-form');
+  const pinInput = document.getElementById('admin-pin-input');
+  const pinError = document.getElementById('admin-pin-error');
+  const pinCancelBtn = document.getElementById('admin-pin-cancel-btn');
+  const adminPortalLink = document.getElementById('admin-portal-link');
+
   const adminModal = document.getElementById('admin-orders-modal');
   const adminCloseBtn = document.getElementById('admin-modal-close');
   const adminRefreshBtn = document.getElementById('admin-refresh-orders-btn');
+  const adminLogoutBtn = document.getElementById('admin-logout-btn');
   const searchInput = document.getElementById('admin-search-input');
 
   const toggleSetupBtn = document.getElementById('btn-toggle-odoo-setup');
@@ -1217,6 +1336,97 @@ function initAdminDashboard() {
   const testConnBtn = document.getElementById('btn-test-odoo-conn');
   const testResultBox = document.getElementById('odoo-test-result-box');
   const odooForm = document.getElementById('admin-odoo-credentials-form');
+
+  // PIN Form Submission
+  if (pinForm) {
+    pinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pin = (pinInput?.value || '').trim();
+      if (!pin) return;
+
+      const submitBtn = document.getElementById('admin-pin-submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verifying...';
+      }
+      if (pinError) pinError.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setAdminSessionPin(pin);
+          closeAdminPinModal();
+          openAdminDashboardModal();
+          showToast('🔓 Admin Dashboard Unlocked');
+        } else {
+          if (pinError) {
+            pinError.textContent = data.error || 'Invalid Admin Secret PIN.';
+            pinError.style.display = 'block';
+          }
+          if (pinInput) {
+            pinInput.value = '';
+            pinInput.focus();
+          }
+        }
+      } catch (err) {
+        if (pinError) {
+          pinError.textContent = 'Verification error. Please try again.';
+          pinError.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Unlock Dashboard 🔒';
+        }
+      }
+    });
+  }
+
+  if (pinCancelBtn) pinCancelBtn.addEventListener('click', closeAdminPinModal);
+  if (pinModal) {
+    pinModal.addEventListener('click', (e) => {
+      if (e.target === pinModal) closeAdminPinModal();
+    });
+  }
+
+  if (adminPortalLink) {
+    adminPortalLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      promptAdminAccess();
+    });
+  }
+
+  // URL Hash check for #admin
+  if (window.location.hash === '#admin') {
+    promptAdminAccess();
+  }
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#admin') {
+      promptAdminAccess();
+    }
+  });
+
+  // Secret keyboard shortcut: Ctrl+Shift+A (or Cmd+Shift+A)
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+      e.preventDefault();
+      promptAdminAccess();
+    }
+  });
+
+  if (adminLogoutBtn) {
+    adminLogoutBtn.addEventListener('click', () => {
+      clearAdminSessionPin();
+      closeAdminDashboardModal();
+      showToast('🔒 Admin session locked.');
+    });
+  }
 
   if (toggleSetupBtn && setupPanel) {
     toggleSetupBtn.addEventListener('click', () => {
@@ -1234,7 +1444,17 @@ function initAdminDashboard() {
       testResultBox.innerHTML = '⏳ Connecting to Odoo JSON-2 endpoint...';
 
       try {
-        const res = await fetch('/api/odoo/test-connection');
+        const res = await fetch('/api/odoo/test-connection', {
+          headers: getAdminHeaders()
+        });
+
+        if (res.status === 401) {
+          clearAdminSessionPin();
+          closeAdminDashboardModal();
+          showAdminPinModal();
+          return;
+        }
+
         const data = await res.json();
 
         if (data.connected) {
@@ -1285,9 +1505,16 @@ function initAdminDashboard() {
       try {
         const res = await fetch('/api/odoo/save-config', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAdminHeaders(),
           body: JSON.stringify({ odooUrl, odooDb, odooUsername, odooApiKey })
         });
+
+        if (res.status === 401) {
+          clearAdminSessionPin();
+          closeAdminDashboardModal();
+          showAdminPinModal();
+          return;
+        }
 
         const data = await res.json();
         if (data.success && data.connectionTest?.connected) {
@@ -1308,28 +1535,12 @@ function initAdminDashboard() {
     });
   }
 
-  function openAdminModal() {
-    if (adminModal) {
-      adminModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      fetchAdminOrders();
-    }
-  }
-
-  function closeAdminModal() {
-    if (adminModal) {
-      adminModal.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  }
-
-  if (adminToggleBtn) adminToggleBtn.addEventListener('click', openAdminModal);
-  if (adminCloseBtn) adminCloseBtn.addEventListener('click', closeAdminModal);
+  if (adminCloseBtn) adminCloseBtn.addEventListener('click', closeAdminDashboardModal);
   if (adminRefreshBtn) adminRefreshBtn.addEventListener('click', fetchAdminOrders);
 
   if (adminModal) {
     adminModal.addEventListener('click', (e) => {
-      if (e.target === adminModal) closeAdminModal();
+      if (e.target === adminModal) closeAdminDashboardModal();
     });
   }
 

@@ -1814,7 +1814,8 @@ input, textarea, select {
    -------------------------------------------------------------------------- */
 .checkout-modal-overlay,
 .order-confirmation-overlay,
-.admin-orders-overlay {
+.admin-orders-overlay,
+.order-tracking-overlay {
   position: fixed;
   inset: 0;
   background: rgba(36, 27, 24, 0.6);
@@ -1833,7 +1834,8 @@ input, textarea, select {
 
 .checkout-modal-overlay.open,
 .order-confirmation-overlay.open,
-.admin-orders-overlay.open {
+.admin-orders-overlay.open,
+.order-tracking-overlay.open {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;

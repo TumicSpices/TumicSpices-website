@@ -737,6 +737,7 @@
           <p>Al-Noor Apartments, Prem Nagar, 208012, Kanpur, Uttar Pradesh</p>
           <p>Phone: +91 86044 46189</p>
           <p><a href="https://wa.me/918604446189" target="_blank" style="color: var(--tumic-saffron);">💬 WhatsApp Direct Hotline</a></p>
+          <p style="margin-top: 6px;"><a href="#track" id="footer-track-link" style="color: var(--tumic-saffron); font-weight: 600;">📦 Track Your Order Status</a></p>
         </div>
 
       </div>
@@ -1013,6 +1014,9 @@
         <a href="#" id="receipt-wa-chat-btn" target="_blank" class="btn btn-whatsapp btn-lg" style="width: 100%; justify-content: center;">
           <span>💬 Chat with us on WhatsApp (+91 86044 46189)</span>
         </a>
+        <button id="receipt-track-order-btn" class="btn btn-outline" style="width: 100%; justify-content: center; font-weight: 700; color: var(--tumic-saffron); border-color: var(--tumic-saffron);">
+          <span>📦 Track Order Status</span>
+        </button>
         <a href="#" id="receipt-wa-details-btn" target="_blank" class="btn btn-outline" style="width: 100%; justify-content: center; color: #128C7E; border-color: rgba(37, 211, 102, 0.4);">
           <span>📋 Send Full Order Summary on WhatsApp</span>
         </a>
@@ -1027,7 +1031,7 @@
   <!-- ==========================================================================
        TRACK ORDER STATUS MODAL
        ========================================================================== -->
-  <div id="track-order-modal" class="drawer-overlay">
+  <div id="track-order-modal" class="order-tracking-overlay">
     <div class="checkout-container" style="max-width: 540px; padding: 24px;">
       <div class="checkout-header" style="padding: 0 0 14px 0; margin-bottom: 14px;">
         <div>
@@ -1038,9 +1042,9 @@
       </div>
 
       <form id="track-order-form" style="display: flex; gap: 8px; margin-bottom: 16px;">
-        <input type="text" id="track-order-input" class="form-input" placeholder="Enter Order ID or Phone" required style="flex: 1;">
+        <input type="text" id="track-order-input" class="form-input" placeholder="Enter Order ID or 10-digit Phone" required style="flex: 1;">
         <button type="submit" id="btn-track-submit" class="btn btn-primary">
-          <span>Track</span>
+          <span>Track 🔍</span>
         </button>
       </form>
 

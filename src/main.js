@@ -1024,19 +1024,51 @@ function getStatusBadgeHtml(status) {
   return `<span style="background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 3px 8px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${icon} ${s}</span>`;
 }
 
+let openTrackModalGlobal = null;
+
 function initTrackOrder() {
+  const navTrackBtn = document.getElementById('nav-track-btn');
+  const mobileNavTrackBtn = document.getElementById('mobile-nav-track-btn');
+  const footerTrackLink = document.getElementById('footer-track-link');
+  const receiptTrackBtn = document.getElementById('receipt-track-order-btn');
   const trackForm = document.getElementById('track-order-form');
+  const trackInput = document.getElementById('track-order-input');
   const trackResult = document.getElementById('track-order-result');
   const trackModal = document.getElementById('track-order-modal');
   const trackCloseBtn = document.getElementById('track-modal-close');
+
+  function openTrackModal(orderId = '') {
+    closeMobileMenu();
+    if (trackModal) {
+      trackModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (orderId && trackInput) {
+        trackInput.value = orderId;
+        if (trackForm) {
+          trackForm.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+      } else if (trackInput) {
+        setTimeout(() => trackInput.focus(), 150);
+      }
+    }
+  }
+
+  openTrackModalGlobal = openTrackModal;
 
   function closeTrackModal() {
     if (trackModal) {
       trackModal.classList.remove('open');
       document.body.style.overflow = '';
     }
+    if (window.location.hash === '#track') {
+      history.replaceState(null, '', window.location.pathname);
+    }
   }
 
+  if (navTrackBtn) navTrackBtn.addEventListener('click', (e) => { e.preventDefault(); openTrackModal(); });
+  if (mobileNavTrackBtn) mobileNavTrackBtn.addEventListener('click', (e) => { e.preventDefault(); openTrackModal(); });
+  if (footerTrackLink) footerTrackLink.addEventListener('click', (e) => { e.preventDefault(); openTrackModal(); });
+  if (receiptTrackBtn) receiptTrackBtn.addEventListener('click', (e) => { e.preventDefault(); closeOrderConfirmation(); openTrackModal(); });
   if (trackCloseBtn) trackCloseBtn.addEventListener('click', closeTrackModal);
   if (trackModal) {
     trackModal.addEventListener('click', (e) => {
@@ -1044,11 +1076,21 @@ function initTrackOrder() {
     });
   }
 
+  // Support #track URL hash on load and dynamic hash change
+  if (window.location.hash === '#track') {
+    setTimeout(openTrackModal, 100);
+  }
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#track') {
+      openTrackModal();
+    }
+  });
+
   if (trackForm && trackResult) {
     trackForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = document.getElementById('track-order-input');
-      const query = input.value.trim();
+      const query = input?.value?.trim() || '';
       if (!query) return;
 
       const submitBtn = document.getElementById('btn-track-submit');
@@ -1139,7 +1181,7 @@ function initTrackOrder() {
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Track';
+          submitBtn.textContent = 'Track 🔍';
         }
       }
     });

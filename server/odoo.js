@@ -714,7 +714,8 @@ export async function fetchOdooOrders(limit = 100) {
         'state',
         'payment_state',
         'invoice_line_ids',
-        'create_date'
+        'create_date',
+        'narration'
       ],
       limit: limit,
       order: 'id desc'
@@ -779,6 +780,36 @@ export async function fetchOdooOrders(limit = 100) {
       const orderId = inv.ref || (inv.name ? `TUMIC-${inv.name.replace(/\D/g, '')}` : `OD-${inv.id}`);
       const dateStr = inv.create_date || inv.invoice_date || new Date().toISOString();
 
+      let extractedAddress = partner.street || '';
+      let extractedPhone = partner.phone || '';
+      let extractedEmail = partner.email || '';
+      let extractedPayment = 'Cash on Delivery (COD)';
+      let orderStatus = inv.state === 'posted' ? 'Confirmed' : 'Pending Confirmation';
+
+      if (inv.narration) {
+        const narrationText = inv.narration.replace(/<[^>]+>/g, ' ');
+
+        const phoneMatch = narrationText.match(/Phone:\s*([^\n\r<]+)/i);
+        if (phoneMatch && !extractedPhone) extractedPhone = phoneMatch[1].trim();
+
+        const emailMatch = narrationText.match(/Email:\s*([^\n\r<]+)/i);
+        if (emailMatch && !extractedEmail) extractedEmail = emailMatch[1].trim();
+
+        const addrMatch = narrationText.match(/Address:\s*([^\n\r<]+)/i);
+        if (addrMatch && !extractedAddress) extractedAddress = addrMatch[1].trim();
+
+        const payMatch = narrationText.match(/Payment Method:\s*([^\n\r<]+)/i);
+        if (payMatch) extractedPayment = payMatch[1].trim();
+
+        const statusMatch = narrationText.match(/Status:\s*([A-Za-z0-9\s]+)/i);
+        if (statusMatch) {
+          const rawStatus = statusMatch[1].trim();
+          const validStatuses = ['Pending Confirmation', 'Confirmed', 'Getting Shipped', 'Shipped', 'Delivered', 'Cancelled'];
+          const matched = validStatuses.find(s => s.toLowerCase() === rawStatus.toLowerCase());
+          if (matched) orderStatus = matched;
+        }
+      }
+
       return {
         id: orderId,
         date: new Date(dateStr).toLocaleDateString('en-IN', {
@@ -789,9 +820,9 @@ export async function fetchOdooOrders(limit = 100) {
         createdAt: new Date(dateStr).toISOString(),
         customer: {
           name: partner.name || inv.partner_id?.[1] || 'Store Customer',
-          phone: partner.phone || '',
-          email: partner.email || '',
-          address: partner.street || '',
+          phone: extractedPhone,
+          email: extractedEmail,
+          address: extractedAddress,
           city: partner.city || 'Kanpur',
           state: (partner.state_id && partner.state_id[1]) || 'Uttar Pradesh',
           pin: partner.zip || ''
@@ -800,9 +831,9 @@ export async function fetchOdooOrders(limit = 100) {
         subtotal: Number(inv.amount_untaxed) || Number(inv.amount_total) || 0,
         deliveryFee: 0,
         totalAmount: Number(inv.amount_total) || 0,
-        paymentMethod: 'Cash on Delivery (COD)',
+        paymentMethod: extractedPayment,
         paymentStatus: inv.payment_state === 'paid' ? 'paid' : 'unpaid',
-        orderStatus: inv.state === 'posted' ? 'Confirmed' : 'Draft',
+        orderStatus: orderStatus,
         odooSyncStatus: 'synced',
         odooPartnerId: inv.partner_id?.[0] || null,
         odooOrderId: null,
@@ -816,6 +847,58 @@ export async function fetchOdooOrders(limit = 100) {
   } catch (err) {
     console.error('[Odoo Orders Fetch Error]:', err.message);
     return [];
+  }
+}
+
+/**
+ * Updates order customer-facing lifecycle status persistently in Odoo 19 account.move narration.
+ */
+export async function updateOdooOrderStatus(invoiceId, newStatus) {
+  if (!isOdooConfigured()) {
+    return { success: false, error: 'Odoo 19 is not configured' };
+  }
+
+  const validStatuses = ['Pending Confirmation', 'Confirmed', 'Getting Shipped', 'Shipped', 'Delivered', 'Cancelled'];
+  const matched = validStatuses.find(s => s.toLowerCase() === String(newStatus).toLowerCase());
+  if (!matched) {
+    return { success: false, error: `Invalid order status: ${newStatus}` };
+  }
+
+  try {
+    const invList = await callOdooJson2('account.move', 'search_read', {
+      domain: [['id', '=', Number(invoiceId)]],
+      fields: ['id', 'narration', 'state', 'ref']
+    });
+
+    if (!invList || invList.length === 0) {
+      return { success: false, error: `Odoo Invoice #${invoiceId} not found` };
+    }
+
+    const currentNarration = invList[0].narration || '';
+    // Strip existing Status line
+    const cleaned = currentNarration
+      .replace(/<p>Status:[^<]*<\/p>/gi, '')
+      .replace(/Status:[^\n\r<]*/gi, '')
+      .replace(/<div>\s*<\/div>/gi, '')
+      .trim();
+
+    const updatedNarration = `${cleaned}\nStatus: ${matched}`.trim();
+
+    await callOdooJson2('account.move', 'write', {
+      ids: [Number(invoiceId)],
+      vals: {
+        narration: updatedNarration
+      }
+    });
+
+    return {
+      success: true,
+      invoiceId: Number(invoiceId),
+      orderStatus: matched
+    };
+  } catch (err) {
+    console.error(`[Odoo Update Status Error for Invoice #${invoiceId}]:`, err.message);
+    return { success: false, error: err.message };
   }
 }
 

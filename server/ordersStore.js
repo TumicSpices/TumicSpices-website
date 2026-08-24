@@ -160,3 +160,23 @@ export function updateOrderWhatsAppStatus(orderId, waResult) {
   return order;
 }
 
+export function updateOrderStatus(orderId, newStatus) {
+  ensureStorage();
+  const orders = getAllOrders();
+  const order = orders.find(o => o.id === orderId || (o.odooInvoiceName && o.odooInvoiceName === orderId));
+
+  if (!order) return null;
+
+  order.orderStatus = newStatus;
+  order.updatedAt = new Date().toISOString();
+  memoryOrders = orders;
+
+  try {
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('[OrdersStore] Updated order status in memory:', err.message);
+  }
+
+  return order;
+}
+

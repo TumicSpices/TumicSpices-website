@@ -1,5 +1,5 @@
-import { getAllOrders, getOrderById, saveOrder, updateOrderOdooStatus, updateOrderWhatsAppStatus } from './ordersStore.js';
-import { syncOrderToOdoo, fetchOdooOrders, isOdooConfigured, getOdooConfig, testOdooConnection, updateEnvFile } from './odoo.js';
+import { getAllOrders, getOrderById, saveOrder, updateOrderOdooStatus, updateOrderWhatsAppStatus, updateOrderStatus } from './ordersStore.js';
+import { syncOrderToOdoo, fetchOdooOrders, updateOdooOrderStatus, isOdooConfigured, getOdooConfig, testOdooConnection, updateEnvFile } from './odoo.js';
 import { sendOrderWhatsAppNotification, isWhatsAppConfigured, getWhatsAppConfig } from './whatsapp.js';
 
 function parseRequestBody(req) {
@@ -320,21 +320,24 @@ export function createApiMiddleware() {
           return sendJson(res, 400, { success: false, error: 'Please enter an Order ID or Mobile Number.' });
         }
 
+        const digitsQuery = query.replace(/\D/g, '');
+        const isPhoneSearch = digitsQuery.length >= 6;
+
+        const matchOrder = (o) => {
+          const matchId = o.id && o.id.toLowerCase().replace(/#/g, '').trim() === query;
+          const matchInv = o.odooInvoiceName && o.odooInvoiceName.toLowerCase().replace(/#/g, '').trim() === query;
+          const phoneDigits = o.customer?.phone ? o.customer.phone.replace(/\D/g, '') : '';
+          const matchPhone = isPhoneSearch && phoneDigits && (phoneDigits === digitsQuery || phoneDigits.endsWith(digitsQuery));
+          return Boolean(matchId || matchInv || matchPhone);
+        };
+
         const orders = getAllOrders();
-        let found = orders.find(o => 
-          (o.id && o.id.toLowerCase().includes(query)) ||
-          (o.customer?.phone && o.customer.phone.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
-          (o.odooInvoiceName && o.odooInvoiceName.toLowerCase().includes(query))
-        );
+        let found = orders.find(matchOrder);
 
         if (!found && isOdooConfigured()) {
           try {
             const odooOrders = await fetchOdooOrders(50);
-            found = odooOrders.find(o => 
-              (o.id && o.id.toLowerCase().includes(query)) ||
-              (o.customer?.phone && o.customer.phone.replace(/\D/g, '').includes(query.replace(/\D/g, ''))) ||
-              (o.odooInvoiceName && o.odooInvoiceName.toLowerCase().includes(query))
-            );
+            found = odooOrders.find(matchOrder);
           } catch (e) {}
         }
 
@@ -442,6 +445,66 @@ export function createApiMiddleware() {
         });
       } catch (err) {
         console.error('[API /api/admin/orders/retry-sync] Error:', err);
+        return sendJson(res, 500, { success: false, error: err.message });
+      }
+    }
+
+    // 7. Admin Update Order Lifecycle Status (Protected & Persisted in Odoo 19)
+    if (req.method === 'POST' && pathname === '/api/admin/orders/update-status') {
+      if (!verifyAdminAuth(req)) {
+        return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required.' });
+      }
+      try {
+        const body = await parseRequestBody(req);
+        const { orderId, odooInvoiceId, status } = body;
+
+        if (!status) {
+          return sendJson(res, 400, { success: false, error: 'status is required' });
+        }
+
+        const validStatuses = ['Pending Confirmation', 'Confirmed', 'Getting Shipped', 'Shipped', 'Delivered', 'Cancelled'];
+        const matchedStatus = validStatuses.find(s => s.toLowerCase() === String(status).trim().toLowerCase());
+
+        if (!matchedStatus) {
+          return sendJson(res, 400, {
+            success: false,
+            error: `Invalid status. Allowed statuses: ${validStatuses.join(', ')}`
+          });
+        }
+
+        let updatedOdoo = null;
+        let invoiceIdToUpdate = odooInvoiceId;
+
+        // If invoice ID wasn't provided, look it up in Odoo
+        if (!invoiceIdToUpdate && orderId && isOdooConfigured()) {
+          try {
+            const odooOrders = await fetchOdooOrders(50);
+            const found = odooOrders.find(o => o.id === orderId || (o.odooInvoiceName && o.odooInvoiceName === orderId));
+            if (found && found.odooInvoiceId) {
+              invoiceIdToUpdate = found.odooInvoiceId;
+            }
+          } catch (oe) {}
+        }
+
+        if (invoiceIdToUpdate) {
+          updatedOdoo = await updateOdooOrderStatus(invoiceIdToUpdate, matchedStatus);
+        }
+
+        if (orderId) {
+          updateOrderStatus(orderId, matchedStatus);
+        }
+
+        console.log(`[API /api/admin/orders/update-status] Order #${orderId || invoiceIdToUpdate} updated to "${matchedStatus}". Odoo result:`, updatedOdoo?.success);
+
+        return sendJson(res, 200, {
+          success: true,
+          orderId: orderId || `INV-${invoiceIdToUpdate}`,
+          odooInvoiceId: invoiceIdToUpdate || null,
+          status: matchedStatus,
+          odooPersisted: Boolean(updatedOdoo?.success)
+        });
+      } catch (err) {
+        console.error('[API /api/admin/orders/update-status] Error:', err);
         return sendJson(res, 500, { success: false, error: err.message });
       }
     }

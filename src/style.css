@@ -2464,3 +2464,113 @@ input, textarea, select {
     max-width: 135px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   16. Customer Order Lifecycle Progress Timeline & Status Styles
+   -------------------------------------------------------------------------- */
+.timeline-container {
+  position: relative;
+  margin: 22px 0 16px 0;
+  padding: 0 4px;
+}
+
+.timeline-track {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  right: 20px;
+  height: 4px;
+  background: #E5E7EB;
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.timeline-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, var(--tumic-saffron));
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timeline-steps {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+}
+
+.timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  max-width: 90px;
+}
+
+.timeline-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #D1D5DB;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.timeline-step.completed .timeline-dot {
+  background: #10B981;
+  border-color: #10B981;
+  color: #FFFFFF;
+}
+
+.timeline-step.active .timeline-dot {
+  background: var(--tumic-saffron);
+  border-color: var(--tumic-saffron);
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(216, 154, 36, 0.22);
+}
+
+.timeline-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--tumic-taupe);
+  margin-top: 6px;
+  line-height: 1.25;
+  transition: color 0.3s ease;
+}
+
+.timeline-step.completed .timeline-label {
+  color: #065F46;
+  font-weight: 600;
+}
+
+.timeline-step.active .timeline-label {
+  color: var(--tumic-espresso);
+  font-weight: 800;
+}
+
+.admin-order-status-select {
+  padding: 4px 6px !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-sm) !important;
+  min-width: 145px;
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: #FFFFFF;
+}
+
+.admin-order-status-select:focus {
+  border-color: var(--tumic-saffron);
+  outline: none;
+}
+

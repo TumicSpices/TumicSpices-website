@@ -922,25 +922,113 @@ function closeOrderConfirmation() {
 }
 
 // ==========================================================================
-// 9. Order Tracking Modal
+// 9. Customer Order Tracking System (Interactive Lifecycle Progress)
 // ==========================================================================
+function renderOrderTimeline(status) {
+  const currentStatus = String(status || 'Confirmed').trim();
+
+  if (currentStatus.toLowerCase() === 'cancelled') {
+    return `
+      <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: var(--radius-md); padding: 16px; text-align: center; margin: 14px 0;">
+        <div style="font-size: 2rem; margin-bottom: 4px;">❌</div>
+        <h4 style="color: #DC2626; font-size: 1.05rem; font-weight: 800; margin: 0 0 4px 0;">Order Cancelled ❌</h4>
+        <p style="color: #991B1B; font-size: 0.8rem; margin: 0; line-height: 1.4;">This order has been marked as cancelled. If you have questions or need assistance, please chat with us on WhatsApp.</p>
+      </div>
+    `;
+  }
+
+  const steps = [
+    { key: 'received', label: 'Order Received', icon: '📝' },
+    { key: 'confirmed', label: 'Order Confirmed 🎉', icon: '🎉' },
+    { key: 'getting_shipped', label: 'Getting Shipped 📦', icon: '📦' },
+    { key: 'shipped', label: 'Shipped 🚚', icon: '🚚' },
+    { key: 'delivered', label: 'Delivered ✅', icon: '✅' }
+  ];
+
+  let activeIndex = 1; // Default Confirmed
+  const sLow = currentStatus.toLowerCase();
+  if (sLow.includes('pending')) activeIndex = 0;
+  else if (sLow.includes('confirm')) activeIndex = 1;
+  else if (sLow.includes('getting') || sLow.includes('pack') || sLow.includes('process')) activeIndex = 2;
+  else if (sLow.includes('shipped') || sLow.includes('transit') || sLow.includes('way')) activeIndex = 3;
+  else if (sLow.includes('deliver')) activeIndex = 4;
+
+  const progressPercent = (activeIndex / (steps.length - 1)) * 100;
+
+  const stepsHtml = steps.map((step, idx) => {
+    let stateClass = 'pending';
+    let dotContent = `${idx + 1}`;
+    if (idx < activeIndex) {
+      stateClass = 'completed';
+      dotContent = '✓';
+    } else if (idx === activeIndex) {
+      stateClass = 'active';
+      dotContent = step.icon;
+    }
+
+    return `
+      <div class="timeline-step ${stateClass}">
+        <div class="timeline-dot">${dotContent}</div>
+        <span class="timeline-label">${step.label}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="timeline-container">
+      <div class="timeline-track">
+        <div class="timeline-progress-fill" style="width: ${progressPercent}%;"></div>
+      </div>
+      <div class="timeline-steps">
+        ${stepsHtml}
+      </div>
+    </div>
+  `;
+}
+
+function getStatusBadgeHtml(status) {
+  const s = String(status || 'Confirmed').trim();
+  const sLow = s.toLowerCase();
+  let bg = '#ECFDF5';
+  let color = '#065F46';
+  let border = '#A7F3D0';
+  let icon = '🎉';
+
+  if (sLow.includes('pending')) {
+    bg = '#FEF3C7';
+    color = '#92400E';
+    border = '#FDE68A';
+    icon = '⏳';
+  } else if (sLow.includes('getting') || sLow.includes('pack')) {
+    bg = '#EDE9FE';
+    color = '#5B21B6';
+    border = '#DDD6FE';
+    icon = '📦';
+  } else if (sLow.includes('shipped')) {
+    bg = '#DBEAFE';
+    color = '#1E40AF';
+    border = '#BFDBFE';
+    icon = '🚚';
+  } else if (sLow.includes('deliver')) {
+    bg = '#D1FAE5';
+    color = '#065F46';
+    border = '#A7F3D0';
+    icon = '✅';
+  } else if (sLow.includes('cancel')) {
+    bg = '#FEE2E2';
+    color = '#991B1B';
+    border = '#FECACA';
+    icon = '❌';
+  }
+
+  return `<span style="background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 3px 8px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${icon} ${s}</span>`;
+}
+
 function initTrackOrder() {
-  const navTrackBtn = document.getElementById('nav-track-btn');
-  const mobileNavTrackBtn = document.getElementById('mobile-nav-track-btn');
-  const trackModal = document.getElementById('track-order-modal');
-  const trackCloseBtn = document.getElementById('track-modal-close');
   const trackForm = document.getElementById('track-order-form');
   const trackResult = document.getElementById('track-order-result');
-
-  function openTrackModal() {
-    closeMobileMenu();
-    if (trackModal) {
-      trackModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      const input = document.getElementById('track-order-input');
-      if (input) setTimeout(() => input.focus(), 150);
-    }
-  }
+  const trackModal = document.getElementById('track-order-modal');
+  const trackCloseBtn = document.getElementById('track-modal-close');
 
   function closeTrackModal() {
     if (trackModal) {
@@ -949,8 +1037,6 @@ function initTrackOrder() {
     }
   }
 
-  if (navTrackBtn) navTrackBtn.addEventListener('click', openTrackModal);
-  if (mobileNavTrackBtn) mobileNavTrackBtn.addEventListener('click', openTrackModal);
   if (trackCloseBtn) trackCloseBtn.addEventListener('click', closeTrackModal);
   if (trackModal) {
     trackModal.addEventListener('click', (e) => {
@@ -972,7 +1058,7 @@ function initTrackOrder() {
       }
 
       trackResult.style.display = 'block';
-      trackResult.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 16px;">⏳ Searching live Odoo order database...</p>';
+      trackResult.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 16px;">⏳ Searching live store orders...</p>';
 
       try {
         const res = await fetch(`/api/orders/lookup?query=${encodeURIComponent(query)}`);
@@ -987,40 +1073,44 @@ function initTrackOrder() {
             </div>
           `).join('');
           
-          const invTag = o.odooInvoiceName ? `<strong style="color: #10B981; font-family: var(--font-mono);">#${o.odooInvoiceName}</strong>` : '<span style="color: var(--text-muted);">Generating in Odoo...</span>';
+          const invTag = o.odooInvoiceName ? `<strong style="color: #10B981; font-family: var(--font-mono);">#${o.odooInvoiceName}</strong>` : '<span style="color: var(--text-muted);">INV Registered</span>';
           const waInquiryUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi Tumic Spices, I am checking the status of my order #${o.id}. Customer Name: ${o.customer?.name}`)}`;
+          const timelineHtml = renderOrderTimeline(o.orderStatus);
+          const statusBadge = getStatusBadgeHtml(o.orderStatus);
 
           trackResult.innerHTML = `
-            <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <div>
-                  <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">Website Order</span>
-                  <strong style="color: var(--primary); font-size: 1.05rem; font-family: var(--font-mono);">#${o.id}</strong>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">Website Order ID</span>
+                  <strong style="color: var(--primary); font-size: 1.08rem; font-family: var(--font-mono);">#${o.id}</strong>
                 </div>
-                <span class="sync-badge synced">● ${o.orderStatus || 'Confirmed'}</span>
+                ${statusBadge}
               </div>
 
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.82rem; margin-bottom: 12px;">
+              ${timelineHtml}
+
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.82rem; margin-bottom: 12px; margin-top: 14px;">
                 <div>
                   <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Customer</span>
                   <strong>${o.customer?.name || 'Customer'}</strong>
                 </div>
                 <div>
-                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Date</span>
+                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Order Date</span>
                   <strong>${o.date || new Date(o.createdAt).toLocaleDateString('en-IN')}</strong>
                 </div>
                 <div>
-                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Odoo Tax Invoice</span>
+                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Tax Invoice</span>
                   ${invTag}
                 </div>
                 <div>
-                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Payment</span>
+                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Payment Method</span>
                   <strong>${o.paymentMethod || 'COD'}</strong>
                 </div>
               </div>
 
               <div style="background: #FFFFFF; border: 1px solid var(--border-light); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 12px;">
-                <span style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-bottom: 4px;">Items:</span>
+                <span style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-bottom: 4px; font-weight: 600;">Ordered Items:</span>
                 ${itemsList}
                 <div style="border-top: 1px solid var(--border-light); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 700; color: var(--primary);">
                   <span>Total Amount:</span>
@@ -1029,7 +1119,7 @@ function initTrackOrder() {
               </div>
 
               <a href="${waInquiryUrl}" target="_blank" class="btn btn-whatsapp btn-sm" style="width: 100%; justify-content: center;">
-                <span>💬 Chat on WhatsApp</span>
+                <span>💬 Contact Store on WhatsApp</span>
               </a>
             </div>
           `;
@@ -1056,7 +1146,6 @@ function initTrackOrder() {
   }
 }
 
-// ==========================================================================
 // ==========================================================================
 // 10. Admin Orders & Odoo Dashboard (PIN Protected)
 // ==========================================================================
@@ -1247,16 +1336,24 @@ function renderAdminOrdersTable(orders) {
       syncBadgeHtml = `<span class="sync-badge pending">⏳ Pending</span>`;
     }
 
-    const soDisplay = order.odooOrderName 
-      ? `<strong style="color: #3B82F6; font-family: var(--font-mono);">#${order.odooOrderName}</strong>` 
-      : (order.odooOrderId ? `<strong style="color: #3B82F6; font-family: var(--font-mono);">SO-${order.odooOrderId}</strong>` : `<span style="color: var(--text-muted);">None</span>`);
-
     const invDisplay = order.odooInvoiceName 
       ? `<strong style="color: #10B981; font-family: var(--font-mono);">#${order.odooInvoiceName}</strong>` 
       : (order.odooInvoiceId ? `<strong style="color: #10B981; font-family: var(--font-mono);">INV-${order.odooInvoiceId}</strong>` : `<span style="color: var(--text-muted);">None</span>`);
 
+    const currentStatus = order.orderStatus || 'Confirmed';
+    const statusSelectHtml = `
+      <select class="admin-order-status-select form-input" data-order-id="${order.id}" data-invoice-id="${order.odooInvoiceId || ''}">
+        <option value="Pending Confirmation" ${currentStatus === 'Pending Confirmation' ? 'selected' : ''}>⏳ Pending Confirmation</option>
+        <option value="Confirmed" ${currentStatus === 'Confirmed' ? 'selected' : ''}>🎉 Confirmed</option>
+        <option value="Getting Shipped" ${currentStatus === 'Getting Shipped' ? 'selected' : ''}>📦 Getting Shipped</option>
+        <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>🚚 Shipped</option>
+        <option value="Delivered" ${currentStatus === 'Delivered' ? 'selected' : ''}>✅ Delivered</option>
+        <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
+      </select>
+    `;
+
     const actionHtml = order.odooSyncStatus === 'synced'
-      ? `<span style="color: #10B981; font-size: 0.78rem; font-weight: 700;">✓ Synced</span>`
+      ? `<span style="color: #10B981; font-size: 0.78rem; font-weight: 700;">✓ Ready</span>`
       : `<button class="btn-retry-sync btn btn-outline btn-sm" data-order-id="${order.id}">🔄 Retry</button>`;
 
     html += `
@@ -1272,8 +1369,8 @@ function renderAdminOrdersTable(orders) {
         <td>
           <small>${order.paymentMethod || 'COD'}</small>
         </td>
-        <td>${soDisplay}</td>
         <td>${invDisplay}</td>
+        <td>${statusSelectHtml}</td>
         <td>${syncBadgeHtml}</td>
         <td>${actionHtml}</td>
       </tr>
@@ -1282,6 +1379,49 @@ function renderAdminOrdersTable(orders) {
 
   tbody.innerHTML = html;
 
+  // Status update listeners
+  tbody.querySelectorAll('.admin-order-status-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const orderId = sel.dataset.orderId;
+      const odooInvoiceId = sel.dataset.invoiceId;
+      const newStatus = sel.value;
+
+      sel.disabled = true;
+      try {
+        const res = await fetch('/api/admin/orders/update-status', {
+          method: 'POST',
+          headers: getAdminHeaders(),
+          body: JSON.stringify({
+            orderId,
+            odooInvoiceId: odooInvoiceId ? Number(odooInvoiceId) : null,
+            status: newStatus
+          })
+        });
+
+        if (res.status === 401) {
+          clearAdminSessionPin();
+          closeAdminDashboardModal();
+          showAdminPinModal();
+          return;
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✓ Order #${orderId} updated to "${newStatus}"`);
+          const match = adminOrdersCache.find(o => o.id === orderId || (o.odooInvoiceId && String(o.odooInvoiceId) === String(odooInvoiceId)));
+          if (match) match.orderStatus = newStatus;
+        } else {
+          showToast(`⚠️ Status update failed: ${data.error || 'Check server logs'}`);
+        }
+      } catch (err) {
+        showToast(`Error updating status: ${err.message}`);
+      } finally {
+        sel.disabled = false;
+      }
+    });
+  });
+
+  // Retry sync listeners
   tbody.querySelectorAll('.btn-retry-sync').forEach(btn => {
     btn.addEventListener('click', async () => {
       const orderId = btn.dataset.orderId;

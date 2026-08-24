@@ -1163,6 +1163,30 @@
     </div>
   </div>
 
+  <!-- ==========================================================================
+       ADMIN ORDER DETAILS POPUP MODAL (#admin-order-details-modal)
+       ========================================================================== -->
+  <div id="admin-order-details-modal" class="admin-orders-overlay" style="z-index: 5200;">
+    <div class="admin-container" style="max-width: 720px; max-height: 92vh;">
+      
+      <div class="admin-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button id="admin-details-back-btn" class="btn btn-outline btn-sm" title="Back to Orders List">← Back to Orders</button>
+          <div>
+            <h3 id="admin-details-title" style="font-size: 1.1rem; font-weight: 700; color: var(--tumic-espresso); margin: 0;">Order Details</h3>
+            <p id="admin-details-subtitle" style="font-size: 0.78rem; color: var(--tumic-taupe); margin: 0;">Detailed customer & order breakdown</p>
+          </div>
+        </div>
+        <button id="admin-details-close-btn" class="drawer-close-btn" aria-label="Close Order Details">✕</button>
+      </div>
+
+      <div id="admin-order-details-content" style="padding: 20px; overflow-y: auto; max-height: calc(92vh - 80px);">
+        <!-- Dynamically injected via renderAdminOrderDetails() in main.js -->
+      </div>
+
+    </div>
+  </div>
+
   <!-- Floating WhatsApp Quick Button -->
   <a href="https://wa.me/918604446189?text=Hi%20Tumic%20Spices%2C%20I%20have%20an%20inquiry" target="_blank" id="floating-wa-btn" class="floating-wa-button" aria-label="Chat on WhatsApp" title="Chat with Tumic Spices on WhatsApp">
     <span style="font-size: 1.15rem;">💬</span>

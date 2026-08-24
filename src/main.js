@@ -1498,8 +1498,8 @@ function renderAdminOrdersTable(orders) {
       : `<span style="color: #92400E; font-weight: 700; background: #FEF3C7; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-block; margin-bottom: 3px;">🟡 Unpaid</span>`;
 
     html += `
-      <tr data-order-id="${order.id}">
-        <td><strong>#${order.id}</strong></td>
+      <tr data-order-id="${order.id}" class="admin-order-row" title="Click to view full Order Details for #${order.id}">
+        <td><strong style="color: var(--primary);">#${order.id}</strong></td>
         <td style="font-size: 0.78rem; color: var(--text-muted);">${order.date || new Date(order.createdAt).toLocaleDateString('en-IN')}</td>
         <td>
           <strong>${order.customer?.name || 'Customer'}</strong><br>
@@ -1512,18 +1512,33 @@ function renderAdminOrdersTable(orders) {
           <small style="display: block; color: var(--text-muted);">${order.paymentMethod || 'COD'}</small>
         </td>
         <td>${invDisplay}</td>
-        <td>${statusSelectHtml}</td>
+        <td onclick="event.stopPropagation();">${statusSelectHtml}</td>
         <td>${syncBadgeHtml}</td>
-        <td>${actionHtml}</td>
+        <td onclick="event.stopPropagation();">${actionHtml}</td>
       </tr>
     `;
   });
 
   tbody.innerHTML = html;
 
+  // Row click listeners to open Order Details Modal
+  tbody.querySelectorAll('.admin-order-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.admin-order-status-select') || e.target.closest('.btn-retry-sync') || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || e.target.tagName === 'BUTTON') {
+        return;
+      }
+      const orderId = row.dataset.orderId;
+      const order = adminOrdersCache.find(o => o.id === orderId || (o.odooInvoiceId && String(o.odooInvoiceId) === String(orderId)));
+      if (order) {
+        openAdminOrderDetailsModal(order);
+      }
+    });
+  });
+
   // Status update listeners
   tbody.querySelectorAll('.admin-order-status-select').forEach(sel => {
-    sel.addEventListener('change', async () => {
+    sel.addEventListener('change', async (e) => {
+      e.stopPropagation();
       const orderId = sel.dataset.orderId;
       const odooInvoiceId = sel.dataset.invoiceId;
       const newStatus = sel.value;
@@ -1579,7 +1594,8 @@ function renderAdminOrdersTable(orders) {
 
   // Retry sync listeners
   tbody.querySelectorAll('.btn-retry-sync').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const orderId = btn.dataset.orderId;
       btn.disabled = true;
       btn.textContent = 'Syncing...';
@@ -1611,6 +1627,219 @@ function renderAdminOrdersTable(orders) {
       }
     });
   });
+}
+
+function openAdminOrderDetailsModal(order) {
+  const modal = document.getElementById('admin-order-details-modal');
+  const content = document.getElementById('admin-order-details-content');
+  const titleEl = document.getElementById('admin-details-title');
+  const subtitleEl = document.getElementById('admin-details-subtitle');
+  if (!modal || !content) return;
+
+  if (titleEl) titleEl.textContent = `Order #${order.id}`;
+  if (subtitleEl) subtitleEl.textContent = `Placed on ${order.date || new Date(order.createdAt).toLocaleDateString('en-IN')}`;
+
+  const isPaid = order.paymentStatus === 'paid' || order.payment_state === 'in_payment' || order.payment_state === 'paid' || order.orderStatus === 'Delivered';
+  const orderDateStr = order.date || (order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Recent');
+  const statusBadge = getStatusBadgeHtml(order.orderStatus || 'Confirmed');
+  const timelineHtml = renderOrderTimeline(order.orderStatus || 'Confirmed');
+  const cleanPhone = (order.customer?.phone || '').replace(/\D/g, '');
+  const waUrl = cleanPhone ? `https://wa.me/91${cleanPhone.slice(-10)}?text=${encodeURIComponent(`Hi ${order.customer?.name || 'Customer'}, regarding your Tumic Spices order #${order.id}...`)}` : `https://wa.me/${WHATSAPP_NUMBER}`;
+
+  const itemsRows = (order.items || []).map((item) => {
+    const unitPrice = Number(item.price) || 0;
+    const qty = Number(item.quantity) || 1;
+    const itemTotal = unitPrice * qty;
+    return `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid var(--border-light);">
+          <strong>${item.name || 'Spice Item'}</strong>
+        </td>
+        <td style="padding: 8px; border-bottom: 1px solid var(--border-light); color: var(--text-muted);">
+          ${item.weight || '100g'}
+        </td>
+        <td style="padding: 8px; border-bottom: 1px solid var(--border-light); font-family: var(--font-mono);">
+          ₹${unitPrice}
+        </td>
+        <td style="padding: 8px; border-bottom: 1px solid var(--border-light); text-align: center; font-weight: 700;">
+          × ${qty}
+        </td>
+        <td style="padding: 8px; border-bottom: 1px solid var(--border-light); text-align: right; font-weight: 700; font-family: var(--font-mono); color: var(--primary);">
+          ₹${itemTotal}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  let syncBadge = '';
+  if (order.odooSyncStatus === 'synced') {
+    syncBadge = `<span class="sync-badge synced">✓ Synced to Odoo</span>`;
+  } else if (order.odooSyncStatus === 'failed') {
+    syncBadge = `<span class="sync-badge failed" title="${order.odooError || 'Sync failed'}">✕ Sync Failed</span>`;
+  } else {
+    syncBadge = `<span class="sync-badge pending">⏳ Sync Pending</span>`;
+  }
+
+  const invoiceRefHtml = order.odooInvoiceName
+    ? `<strong style="color: #10B981; font-family: var(--font-mono);">#${order.odooInvoiceName}</strong>`
+    : (order.odooInvoiceId ? `<strong style="color: #10B981; font-family: var(--font-mono);">INV-${order.odooInvoiceId}</strong>` : `<span style="color: var(--text-muted);">Not registered</span>`);
+
+  content.innerHTML = `
+    <!-- Top Status & Progress Banner -->
+    <div style="background: var(--tumic-spice-cream); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Status:</span>
+          ${statusBadge}
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Payment:</span>
+          <span style="color: ${isPaid ? '#065F46' : '#92400E'}; font-weight: 700; background: ${isPaid ? '#D1FAE5' : '#FEF3C7'}; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 0.76rem;">
+            ${isPaid ? '🟢 Paid' : '🟡 Unpaid'}
+          </span>
+          ${syncBadge}
+        </div>
+      </div>
+      ${timelineHtml}
+    </div>
+
+    <!-- 2-Column Overview Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 16px;">
+      
+      <!-- Customer Information -->
+      <div class="admin-details-card">
+        <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--tumic-espresso); margin-bottom: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+          👤 Customer & Contact
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.84rem;">
+          <div>
+            <span class="admin-details-label">Full Name</span>
+            <strong class="admin-details-val">${order.customer?.name || 'Customer'}</strong>
+          </div>
+          <div>
+            <span class="admin-details-label">Phone Number</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <a href="tel:${order.customer?.phone || ''}" style="color: var(--primary); font-weight: 700; text-decoration: underline;">
+                📞 ${order.customer?.phone || 'N/A'}
+              </a>
+              ${cleanPhone ? `<a href="${waUrl}" target="_blank" class="btn btn-whatsapp btn-sm" style="padding: 2px 8px; font-size: 0.72rem;">💬 WhatsApp</a>` : ''}
+            </div>
+          </div>
+          <div>
+            <span class="admin-details-label">Email</span>
+            <span class="admin-details-val" style="word-break: break-all;">${order.customer?.email || 'N/A'}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shipping & Delivery Address -->
+      <div class="admin-details-card">
+        <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--tumic-espresso); margin-bottom: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+          📍 Delivery Address
+        </h4>
+        <div style="font-size: 0.84rem; line-height: 1.5; color: var(--tumic-espresso);">
+          <p style="margin-bottom: 4px;"><strong>Street:</strong> ${order.customer?.address || 'N/A'}</p>
+          <p style="margin-bottom: 4px;"><strong>City:</strong> ${order.customer?.city || 'Kanpur'}</p>
+          <p style="margin-bottom: 4px;"><strong>State & PIN:</strong> ${order.customer?.state || 'Uttar Pradesh'} - ${order.customer?.pin || ''}</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Ordered Products Table -->
+    <div class="admin-details-card" style="margin-bottom: 16px;">
+      <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--tumic-espresso); margin-bottom: 8px; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+        📦 Ordered Items (${(order.items || []).length})
+      </h4>
+      <table class="admin-details-items-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Weight</th>
+            <th>Price</th>
+            <th style="text-align: center;">Qty</th>
+            <th style="text-align: right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsRows || '<tr><td colspan="5" style="text-align: center; padding: 12px;">No items recorded.</td></tr>'}
+        </tbody>
+      </table>
+
+      <!-- Order Totals Breakdown -->
+      <div style="border-top: 1px dashed var(--border-light); margin-top: 12px; padding-top: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 0.84rem;">
+        <div style="display: flex; justify-content: space-between; color: var(--text-muted);">
+          <span>Subtotal</span>
+          <span>₹${order.subtotal || order.totalAmount}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; color: var(--text-muted);">
+          <span>Delivery Charge</span>
+          <span>${order.deliveryFee ? `₹${order.deliveryFee}` : '₹0 (Free Delivery)'}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border-light);">
+          <span>Total Order Amount</span>
+          <span>₹${order.totalAmount}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Odoo & Technical Reference Info -->
+    <div class="admin-details-card" style="margin-bottom: 16px; background: #FFFFFF;">
+      <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--tumic-espresso); margin-bottom: 8px; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+        🔗 Integration & Odoo Metadata
+      </h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.8rem;">
+        <div>
+          <span class="admin-details-label">Order Reference</span>
+          <strong>#${order.id}</strong>
+        </div>
+        <div>
+          <span class="admin-details-label">Date & Time</span>
+          <span>${orderDateStr}</span>
+        </div>
+        <div>
+          <span class="admin-details-label">Payment Method</span>
+          <span>${order.paymentMethod || 'Cash on Delivery (COD)'}</span>
+        </div>
+        <div>
+          <span class="admin-details-label">Odoo 19 Invoice</span>
+          ${invoiceRefHtml}
+        </div>
+        ${order.odooError ? `
+          <div style="grid-column: 1 / -1; background: #FEF2F2; border: 1px solid #FECACA; padding: 6px 10px; border-radius: 4px; color: #DC2626;">
+            <strong>Sync Error:</strong> ${order.odooError}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+
+    <!-- Modal Action Buttons -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+      <button type="button" id="admin-details-footer-back-btn" class="btn btn-outline btn-sm">
+        ← Back to Orders
+      </button>
+      ${cleanPhone ? `
+        <a href="${waUrl}" target="_blank" class="btn btn-whatsapp btn-sm">
+          💬 Message Customer on WhatsApp
+        </a>
+      ` : ''}
+    </div>
+  `;
+
+  // Attach footer back button listener
+  const footerBackBtn = document.getElementById('admin-details-footer-back-btn');
+  if (footerBackBtn) {
+    footerBackBtn.addEventListener('click', closeAdminOrderDetailsModal);
+  }
+
+  modal.classList.add('open');
+}
+
+function closeAdminOrderDetailsModal() {
+  const modal = document.getElementById('admin-order-details-modal');
+  if (modal) {
+    modal.classList.remove('open');
+  }
 }
 
 function initAdminDashboard() {
@@ -1833,6 +2062,19 @@ function initAdminDashboard() {
 
   if (adminCloseBtn) adminCloseBtn.addEventListener('click', closeAdminDashboardModal);
   if (adminRefreshBtn) adminRefreshBtn.addEventListener('click', fetchAdminOrders);
+
+  // Admin Order Details Modal listeners
+  const detailsModal = document.getElementById('admin-order-details-modal');
+  const detailsCloseBtn = document.getElementById('admin-details-close-btn');
+  const detailsBackBtn = document.getElementById('admin-details-back-btn');
+
+  if (detailsCloseBtn) detailsCloseBtn.addEventListener('click', closeAdminOrderDetailsModal);
+  if (detailsBackBtn) detailsBackBtn.addEventListener('click', closeAdminOrderDetailsModal);
+  if (detailsModal) {
+    detailsModal.addEventListener('click', (e) => {
+      if (e.target === detailsModal) closeAdminOrderDetailsModal();
+    });
+  }
 
   if (adminModal) {
     adminModal.addEventListener('click', (e) => {

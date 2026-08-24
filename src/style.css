@@ -2206,6 +2206,69 @@ input, textarea, select {
   border-bottom: 1px solid var(--border-light);
 }
 
+.admin-order-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-order-row:hover {
+  background-color: rgba(216, 154, 36, 0.08) !important;
+}
+
+.admin-order-row:active {
+  background-color: rgba(216, 154, 36, 0.16) !important;
+}
+
+.admin-details-card {
+  background: var(--tumic-spice-cream);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.admin-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.admin-details-label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.admin-details-val {
+  font-size: 0.88rem;
+  color: var(--tumic-espresso);
+  font-weight: 600;
+}
+
+.admin-details-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.admin-details-items-table th {
+  padding: 6px 8px;
+  background: rgba(36, 27, 24, 0.05);
+  border-bottom: 2px solid var(--border-light);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.admin-details-items-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
 .sync-badge {
   display: inline-block;
   padding: 2px 6px;

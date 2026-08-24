@@ -1492,8 +1492,13 @@ function renderAdminOrdersTable(orders) {
       ? `<span style="color: #10B981; font-size: 0.78rem; font-weight: 700;">✓ Ready</span>`
       : `<button class="btn-retry-sync btn btn-outline btn-sm" data-order-id="${order.id}">🔄 Retry</button>`;
 
+    const isPaid = order.paymentStatus === 'paid' || order.payment_state === 'in_payment' || order.payment_state === 'paid' || isDelivered;
+    const paymentBadgeHtml = isPaid
+      ? `<span style="color: #065F46; font-weight: 700; background: #D1FAE5; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-block; margin-bottom: 3px;">🟢 Paid</span>`
+      : `<span style="color: #92400E; font-weight: 700; background: #FEF3C7; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-block; margin-bottom: 3px;">🟡 Unpaid</span>`;
+
     html += `
-      <tr>
+      <tr data-order-id="${order.id}">
         <td><strong>#${order.id}</strong></td>
         <td style="font-size: 0.78rem; color: var(--text-muted);">${order.date || new Date(order.createdAt).toLocaleDateString('en-IN')}</td>
         <td>
@@ -1503,7 +1508,8 @@ function renderAdminOrdersTable(orders) {
         <td style="font-size: 0.8rem;">${productsSummary}</td>
         <td style="font-family: var(--font-mono); font-weight: 700; color: var(--primary);">₹${order.totalAmount}</td>
         <td>
-          <small>${order.paymentMethod || 'COD'}</small>
+          ${paymentBadgeHtml}
+          <small style="display: block; color: var(--text-muted);">${order.paymentMethod || 'COD'}</small>
         </td>
         <td>${invDisplay}</td>
         <td>${statusSelectHtml}</td>
@@ -1553,7 +1559,10 @@ function renderAdminOrdersTable(orders) {
           const match = adminOrdersCache.find(o => o.id === orderId || (o.odooInvoiceId && String(o.odooInvoiceId) === String(odooInvoiceId)));
           if (match) {
             match.orderStatus = data.status || 'Delivered';
-            if (data.paymentState) match.paymentStatus = 'paid';
+            if (data.paymentState || newStatus.includes('Payment')) {
+              match.paymentStatus = 'paid';
+            }
+            renderAdminOrdersTable(adminOrdersCache);
           }
         } else {
           showToast(`⚠️ Status update failed: ${data.error || 'Check server logs'}`);

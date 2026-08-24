@@ -526,7 +526,7 @@ export function createApiMiddleware() {
         let targetStatus = 'Confirmed';
         let isPaymentRegistration = false;
 
-        if (sLow.includes('payment') || sLow.includes('received') || sLow === 'delivered & payment received') {
+        if (sLow.includes('paid') || sLow.includes('payment') || sLow.includes('received') || sLow === 'delivered & payment received' || sLow === 'delivered & paid') {
           targetStatus = 'Delivered';
           isPaymentRegistration = true;
         } else if (sLow.includes('pending')) {
@@ -577,7 +577,7 @@ export function createApiMiddleware() {
         }
 
         if (invoiceIdToUpdate) {
-          updatedOdoo = await updateOdooOrderStatus(invoiceIdToUpdate, targetStatus);
+          updatedOdoo = await updateOdooOrderStatus(invoiceIdToUpdate, targetStatus, isPaymentRegistration);
         }
 
         if (orderId) {

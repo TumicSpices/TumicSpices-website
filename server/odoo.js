@@ -832,7 +832,7 @@ export async function fetchOdooOrders(limit = 100) {
         deliveryFee: 0,
         totalAmount: Number(inv.amount_total) || 0,
         paymentMethod: extractedPayment,
-        paymentStatus: inv.payment_state === 'paid' ? 'paid' : 'unpaid',
+        paymentStatus: (inv.payment_state === 'paid' || inv.payment_state === 'in_payment' || /Payment Status:\s*Paid/i.test(inv.narration || '')) ? 'paid' : 'unpaid',
         orderStatus: orderStatus,
         odooSyncStatus: 'synced',
         odooPartnerId: inv.partner_id?.[0] || null,
@@ -853,7 +853,7 @@ export async function fetchOdooOrders(limit = 100) {
 /**
  * Updates order customer-facing lifecycle status persistently in Odoo 19 account.move narration.
  */
-export async function updateOdooOrderStatus(invoiceId, newStatus) {
+export async function updateOdooOrderStatus(invoiceId, newStatus, isPaid = false) {
   if (!isOdooConfigured()) {
     return { success: false, error: 'Odoo 19 is not configured' };
   }
@@ -867,7 +867,7 @@ export async function updateOdooOrderStatus(invoiceId, newStatus) {
   try {
     const invList = await callOdooJson2('account.move', 'search_read', {
       domain: [['id', '=', Number(invoiceId)]],
-      fields: ['id', 'narration', 'state', 'ref']
+      fields: ['id', 'narration', 'state', 'ref', 'payment_state']
     });
 
     if (!invList || invList.length === 0) {
@@ -875,14 +875,17 @@ export async function updateOdooOrderStatus(invoiceId, newStatus) {
     }
 
     const currentNarration = invList[0].narration || '';
-    // Strip existing Status line
-    const cleaned = currentNarration
+    // Strip existing Status and Payment Status lines
+    let cleaned = currentNarration
       .replace(/<p>Status:[^<]*<\/p>/gi, '')
       .replace(/Status:[^\n\r<]*/gi, '')
+      .replace(/<p>Payment Status:[^<]*<\/p>/gi, '')
+      .replace(/Payment Status:[^\n\r<]*/gi, '')
       .replace(/<div>\s*<\/div>/gi, '')
       .trim();
 
-    const updatedNarration = `${cleaned}\nStatus: ${matched}`.trim();
+    const paymentLine = isPaid ? '\nPayment Status: Paid' : (invList[0].payment_state === 'in_payment' || invList[0].payment_state === 'paid' ? '\nPayment Status: Paid' : '');
+    const updatedNarration = `${cleaned}${paymentLine}\nStatus: ${matched}`.trim();
 
     await callOdooJson2('account.move', 'write', {
       ids: [Number(invoiceId)],

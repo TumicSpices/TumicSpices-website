@@ -312,6 +312,7 @@ export function createApiMiddleware() {
     }
 
     // 5. Order Status Lookup Endpoint (For Customers & Tracking)
+    // 4. Customer Order Lookup Endpoint (Exact Order ID or All Orders by Phone Number)
     if (req.method === 'GET' && pathname === '/api/orders/lookup') {
       try {
         const queryParam = searchParams.get('query') || (req.query && req.query.query) || '';
@@ -323,30 +324,84 @@ export function createApiMiddleware() {
         const digitsQuery = query.replace(/\D/g, '');
         const isPhoneSearch = digitsQuery.length >= 6;
 
-        const matchOrder = (o) => {
-          const matchId = o.id && o.id.toLowerCase().replace(/#/g, '').trim() === query;
-          const matchInv = o.odooInvoiceName && o.odooInvoiceName.toLowerCase().replace(/#/g, '').trim() === query;
-          const phoneDigits = o.customer?.phone ? o.customer.phone.replace(/\D/g, '') : '';
-          const matchPhone = isPhoneSearch && phoneDigits && (phoneDigits === digitsQuery || phoneDigits.endsWith(digitsQuery));
-          return Boolean(matchId || matchInv || matchPhone);
-        };
-
-        const orders = getAllOrders();
-        let found = orders.find(matchOrder);
-
-        if (!found && isOdooConfigured()) {
+        // Fetch unified local and Odoo orders
+        const localOrders = getAllOrders();
+        let odooOrders = [];
+        if (isOdooConfigured()) {
           try {
-            const odooOrders = await fetchOdooOrders(50);
-            found = odooOrders.find(matchOrder);
-          } catch (e) {}
+            odooOrders = await fetchOdooOrders(100);
+          } catch (oe) {
+            console.warn('[API /api/orders/lookup] Odoo fetch warning:', oe.message);
+          }
         }
 
+        // Merge & deduplicate
+        const orderMap = new Map();
+        localOrders.forEach(o => {
+          if (o.id) orderMap.set(o.id, o);
+        });
+        odooOrders.forEach(o => {
+          const existing = orderMap.get(o.id);
+          if (!existing) {
+            orderMap.set(o.id, o);
+          } else {
+            orderMap.set(o.id, {
+              ...existing,
+              ...o,
+              orderStatus: existing.orderStatus || o.orderStatus || 'Confirmed'
+            });
+          }
+        });
+
+        // Convert to array and sort newest first
+        const allOrders = Array.from(orderMap.values()).sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.date || 0).getTime();
+          const dateB = new Date(b.createdAt || b.date || 0).getTime();
+          return dateB - dateA;
+        });
+
+        if (isPhoneSearch) {
+          const matchingOrders = allOrders.filter(o => {
+            const phoneDigits = o.customer?.phone ? o.customer.phone.replace(/\D/g, '') : '';
+            return Boolean(phoneDigits && (phoneDigits === digitsQuery || phoneDigits.endsWith(digitsQuery)));
+          });
+
+          if (matchingOrders.length === 0) {
+            return sendJson(res, 404, {
+              success: false,
+              error: `No orders found registered with phone number "+91 ${digitsQuery}". Please check the phone number.`
+            });
+          }
+
+          return sendJson(res, 200, {
+            success: true,
+            isPhoneSearch: true,
+            phone: digitsQuery,
+            count: matchingOrders.length,
+            orders: matchingOrders,
+            order: matchingOrders[0] // for backwards compatibility
+          });
+        }
+
+        // Exact Order ID or Invoice Search
+        const found = allOrders.find(o => {
+          const matchId = o.id && o.id.toLowerCase().replace(/#/g, '').trim() === query;
+          const matchInv = o.odooInvoiceName && o.odooInvoiceName.toLowerCase().replace(/#/g, '').trim() === query;
+          return Boolean(matchId || matchInv);
+        });
+
         if (!found) {
-          return sendJson(res, 404, { success: false, error: `No order found matching "${query}". Please check the Order ID or phone number.` });
+          return sendJson(res, 404, {
+            success: false,
+            error: `No order found matching "${queryParam}". Please check the Order ID or phone number.`
+          });
         }
 
         return sendJson(res, 200, {
           success: true,
+          isPhoneSearch: false,
+          count: 1,
+          orders: [found],
           order: found
         });
       } catch (err) {

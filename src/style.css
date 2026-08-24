@@ -2576,3 +2576,65 @@ input, textarea, select {
   outline: none;
 }
 
+/* --------------------------------------------------------------------------
+   17. Multi-Order Tracking List & Accordion Styles
+   -------------------------------------------------------------------------- */
+.track-orders-container {
+  max-height: 68vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.track-order-card {
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  transition: all 0.2s ease;
+}
+
+.track-order-card:hover {
+  border-color: rgba(216, 154, 36, 0.4);
+  box-shadow: 0 4px 12px rgba(36, 27, 24, 0.04);
+}
+
+.track-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.track-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--tumic-saffron);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.track-toggle-btn:hover {
+  background: rgba(216, 154, 36, 0.12);
+}
+
+.track-card-details {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-light);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+

@@ -1024,6 +1024,138 @@ function getStatusBadgeHtml(status) {
   return `<span style="background: ${bg}; color: ${color}; border: 1px solid ${border}; padding: 3px 8px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${icon} ${s}</span>`;
 }
 
+function renderTrackOrderCard(o, isExpanded = true, isMultiple = false, idx = 0) {
+  const itemsList = (o.items || []).map(i => `
+    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.82rem;">
+      <span>${i.name} (${i.weight || '100g'}) × ${i.quantity}</span>
+      <strong>₹${i.price * i.quantity}</strong>
+    </div>
+  `).join('');
+  
+  const invTag = o.odooInvoiceName ? `<strong style="color: #10B981; font-family: var(--font-mono);">#${o.odooInvoiceName}</strong>` : '<span style="color: var(--text-muted);">INV Registered</span>';
+  const waInquiryUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi Tumic Spices, I am checking the status of my order #${o.id}. Customer Name: ${o.customer?.name || 'Customer'}`)}`;
+  const timelineHtml = renderOrderTimeline(o.orderStatus);
+  const statusBadge = getStatusBadgeHtml(o.orderStatus);
+  const orderDateStr = o.date || (o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : 'Recent');
+
+  if (isMultiple) {
+    const cardId = `track-card-body-${idx}`;
+    const toggleIconId = `track-toggle-icon-${idx}`;
+    return `
+      <div class="track-order-card">
+        <div class="track-card-header" onclick="
+          const el = document.getElementById('${cardId}');
+          const icon = document.getElementById('${toggleIconId}');
+          if (el.style.display === 'none') {
+            el.style.display = 'block';
+            if (icon) icon.textContent = 'Details ▴';
+          } else {
+            el.style.display = 'none';
+            if (icon) icon.textContent = 'Details ▾';
+          }
+        ">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong style="color: var(--primary); font-size: 0.98rem; font-family: var(--font-mono);">#${o.id}</strong>
+              ${idx === 0 ? '<span style="background: rgba(216,154,36,0.15); color: var(--tumic-saffron); font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Latest Order</span>' : ''}
+            </div>
+            <span style="font-size: 0.76rem; color: var(--tumic-taupe);">
+              📅 ${orderDateStr} · <strong style="color: var(--tumic-espresso);">₹${o.totalAmount}</strong> (${o.paymentMethod || 'COD'})
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            ${statusBadge}
+            <span id="${toggleIconId}" class="track-toggle-btn">${isExpanded ? 'Details ▴' : 'Details ▾'}</span>
+          </div>
+        </div>
+
+        <div id="${cardId}" class="track-card-details" style="display: ${isExpanded ? 'block' : 'none'};">
+          ${timelineHtml}
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.82rem; margin-bottom: 12px; margin-top: 14px;">
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Customer</span>
+              <strong>${o.customer?.name || 'Customer'}</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Order Date</span>
+              <strong>${orderDateStr}</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Tax Invoice</span>
+              ${invTag}
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Payment Method</span>
+              <strong>${o.paymentMethod || 'COD'}</strong>
+            </div>
+          </div>
+
+          <div style="background: #FFFFFF; border: 1px solid var(--border-light); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 12px;">
+            <span style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-bottom: 4px; font-weight: 600;">Ordered Items:</span>
+            ${itemsList}
+            <div style="border-top: 1px solid var(--border-light); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 700; color: var(--primary);">
+              <span>Total Amount:</span>
+              <span>₹${o.totalAmount}</span>
+            </div>
+          </div>
+
+          <a href="${waInquiryUrl}" target="_blank" class="btn btn-whatsapp btn-sm" style="width: 100%; justify-content: center;">
+            <span>💬 Contact Store on WhatsApp</span>
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  // Single order card
+  return `
+    <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">Website Order ID</span>
+          <strong style="color: var(--primary); font-size: 1.08rem; font-family: var(--font-mono);">#${o.id}</strong>
+        </div>
+        ${statusBadge}
+      </div>
+
+      ${timelineHtml}
+
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.82rem; margin-bottom: 12px; margin-top: 14px;">
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Customer</span>
+          <strong>${o.customer?.name || 'Customer'}</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Order Date</span>
+          <strong>${orderDateStr}</strong>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Tax Invoice</span>
+          ${invTag}
+        </div>
+        <div>
+          <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Payment Method</span>
+          <strong>${o.paymentMethod || 'COD'}</strong>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid var(--border-light); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 12px;">
+        <span style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-bottom: 4px; font-weight: 600;">Ordered Items:</span>
+        ${itemsList}
+        <div style="border-top: 1px solid var(--border-light); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 700; color: var(--primary);">
+          <span>Total Amount:</span>
+          <span>₹${o.totalAmount}</span>
+        </div>
+      </div>
+
+      <a href="${waInquiryUrl}" target="_blank" class="btn btn-whatsapp btn-sm" style="width: 100%; justify-content: center;">
+        <span>💬 Contact Store on WhatsApp</span>
+      </a>
+    </div>
+  `;
+}
+
 let openTrackModalGlobal = null;
 
 function initTrackOrder() {
@@ -1106,65 +1238,26 @@ function initTrackOrder() {
         const res = await fetch(`/api/orders/lookup?query=${encodeURIComponent(query)}`);
         const data = await res.json();
 
-        if (data.success && data.order) {
-          const o = data.order;
-          const itemsList = (o.items || []).map(i => `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.82rem;">
-              <span>${i.name} (${i.weight || '100g'}) × ${i.quantity}</span>
-              <strong>₹${i.price * i.quantity}</strong>
-            </div>
-          `).join('');
-          
-          const invTag = o.odooInvoiceName ? `<strong style="color: #10B981; font-family: var(--font-mono);">#${o.odooInvoiceName}</strong>` : '<span style="color: var(--text-muted);">INV Registered</span>';
-          const waInquiryUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hi Tumic Spices, I am checking the status of my order #${o.id}. Customer Name: ${o.customer?.name}`)}`;
-          const timelineHtml = renderOrderTimeline(o.orderStatus);
-          const statusBadge = getStatusBadgeHtml(o.orderStatus);
+        if (data.success && (data.orders?.length > 0 || data.order)) {
+          const orders = Array.isArray(data.orders) && data.orders.length > 0 ? data.orders : [data.order];
 
-          trackResult.innerHTML = `
-            <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          if (orders.length > 1) {
+            const cardsHtml = orders.map((o, idx) => renderTrackOrderCard(o, idx === 0, true, idx)).join('');
+            trackResult.innerHTML = `
+              <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border-light);">
                 <div>
-                  <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">Website Order ID</span>
-                  <strong style="color: var(--primary); font-size: 1.08rem; font-family: var(--font-mono);">#${o.id}</strong>
+                  <h4 style="font-size: 1.02rem; font-weight: 800; color: var(--tumic-espresso); margin: 0;">📦 Your Orders (${orders.length})</h4>
+                  <small style="color: var(--tumic-taupe); font-size: 0.76rem;">All orders for +91 ${data.phone || query}</small>
                 </div>
-                ${statusBadge}
+                <span class="sync-badge synced" style="font-size: 0.72rem; padding: 3px 8px;">${orders.length} Orders</span>
               </div>
-
-              ${timelineHtml}
-
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.82rem; margin-bottom: 12px; margin-top: 14px;">
-                <div>
-                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Customer</span>
-                  <strong>${o.customer?.name || 'Customer'}</strong>
-                </div>
-                <div>
-                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Order Date</span>
-                  <strong>${o.date || new Date(o.createdAt).toLocaleDateString('en-IN')}</strong>
-                </div>
-                <div>
-                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Tax Invoice</span>
-                  ${invTag}
-                </div>
-                <div>
-                  <span style="color: var(--text-muted); display: block; font-size: 0.7rem;">Payment Method</span>
-                  <strong>${o.paymentMethod || 'COD'}</strong>
-                </div>
+              <div class="track-orders-container">
+                ${cardsHtml}
               </div>
-
-              <div style="background: #FFFFFF; border: 1px solid var(--border-light); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 12px;">
-                <span style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-bottom: 4px; font-weight: 600;">Ordered Items:</span>
-                ${itemsList}
-                <div style="border-top: 1px solid var(--border-light); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 700; color: var(--primary);">
-                  <span>Total Amount:</span>
-                  <span>₹${o.totalAmount}</span>
-                </div>
-              </div>
-
-              <a href="${waInquiryUrl}" target="_blank" class="btn btn-whatsapp btn-sm" style="width: 100%; justify-content: center;">
-                <span>💬 Contact Store on WhatsApp</span>
-              </a>
-            </div>
-          `;
+            `;
+          } else {
+            trackResult.innerHTML = renderTrackOrderCard(orders[0], true, false, 0);
+          }
         } else {
           trackResult.innerHTML = `
             <div style="padding: 14px; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: var(--radius-sm); color: #DC2626; font-size: 0.84rem; text-align: center;">

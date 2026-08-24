@@ -801,7 +801,8 @@ export async function fetchOdooOrders(limit = 100) {
         const payMatch = narrationText.match(/Payment Method:\s*([^\n\r<]+)/i);
         if (payMatch) extractedPayment = payMatch[1].trim();
 
-        const statusMatch = narrationText.match(/Status:\s*([A-Za-z0-9\s]+)/i);
+        const payStatusMatch = narrationText.match(/Payment Status:\s*([^\n\r<]+)/i);
+        const statusMatch = narrationText.match(/(?<!Payment\s)Status:\s*([A-Za-z0-9\s]+)/i);
         if (statusMatch) {
           const rawStatus = statusMatch[1].trim();
           const validStatuses = ['Pending Confirmation', 'Confirmed', 'Getting Shipped', 'Shipped', 'Delivered', 'Cancelled'];

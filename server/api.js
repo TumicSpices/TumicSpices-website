@@ -322,7 +322,6 @@ export function createApiMiddleware() {
         }
 
         const digitsQuery = query.replace(/\D/g, '');
-        const isPhoneSearch = digitsQuery.length >= 6;
 
         // Fetch unified local and Odoo orders
         const localOrders = getAllOrders();
@@ -360,49 +359,53 @@ export function createApiMiddleware() {
           return dateB - dateA;
         });
 
-        if (isPhoneSearch) {
-          const matchingOrders = allOrders.filter(o => {
-            const phoneDigits = o.customer?.phone ? o.customer.phone.replace(/\D/g, '') : '';
-            return Boolean(phoneDigits && (phoneDigits === digitsQuery || phoneDigits.endsWith(digitsQuery)));
-          });
-
-          if (matchingOrders.length === 0) {
-            return sendJson(res, 404, {
-              success: false,
-              error: `No orders found registered with phone number "+91 ${digitsQuery}". Please check the phone number.`
-            });
-          }
-
-          return sendJson(res, 200, {
-            success: true,
-            isPhoneSearch: true,
-            phone: digitsQuery,
-            count: matchingOrders.length,
-            orders: matchingOrders,
-            order: matchingOrders[0] // for backwards compatibility
-          });
-        }
-
-        // Exact Order ID or Invoice Search
-        const found = allOrders.find(o => {
+        // 1. Check for Exact Order ID or Invoice Name Match First
+        const exactMatch = allOrders.find(o => {
           const matchId = o.id && o.id.toLowerCase().replace(/#/g, '').trim() === query;
           const matchInv = o.odooInvoiceName && o.odooInvoiceName.toLowerCase().replace(/#/g, '').trim() === query;
           return Boolean(matchId || matchInv);
         });
 
-        if (!found) {
-          return sendJson(res, 404, {
-            success: false,
-            error: `No order found matching "${queryParam}". Please check the Order ID or phone number.`
+        if (exactMatch) {
+          return sendJson(res, 200, {
+            success: true,
+            isPhoneSearch: false,
+            count: 1,
+            orders: [exactMatch],
+            order: exactMatch
           });
         }
 
-        return sendJson(res, 200, {
-          success: true,
-          isPhoneSearch: false,
-          count: 1,
-          orders: [found],
-          order: found
+        // 2. Check for Phone Number Search (7 to 15 digits)
+        const rawDigitsOnly = query.replace(/[\s\-\+\(\)]/g, '');
+        const isPhoneSearch = /^[0-9]{7,15}$/.test(rawDigitsOnly) || /^[0-9]{10}$/.test(digitsQuery);
+
+        if (isPhoneSearch && digitsQuery.length >= 7) {
+          const matchingOrders = allOrders.filter(o => {
+            const phoneDigits = o.customer?.phone ? o.customer.phone.replace(/\D/g, '') : '';
+            return Boolean(phoneDigits && (phoneDigits === digitsQuery || phoneDigits.endsWith(digitsQuery) || digitsQuery.endsWith(phoneDigits)));
+          });
+
+          if (matchingOrders.length > 0) {
+            return sendJson(res, 200, {
+              success: true,
+              isPhoneSearch: true,
+              phone: digitsQuery,
+              count: matchingOrders.length,
+              orders: matchingOrders,
+              order: matchingOrders[0] // for backwards compatibility
+            });
+          }
+
+          return sendJson(res, 404, {
+            success: false,
+            error: `No orders found registered with phone number "+91 ${digitsQuery}". Please check the phone number.`
+          });
+        }
+
+        return sendJson(res, 404, {
+          success: false,
+          error: `No order found matching "${queryParam}". Please check the Order ID or phone number.`
         });
       } catch (err) {
         return sendJson(res, 500, { success: false, error: err.message });

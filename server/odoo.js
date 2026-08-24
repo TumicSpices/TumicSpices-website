@@ -902,3 +902,105 @@ export async function updateOdooOrderStatus(invoiceId, newStatus) {
   }
 }
 
+/**
+ * Registers exact invoice payment in Odoo 19 and reconciles against the invoice.
+ * Idempotency guard: If already paid/in_payment or residual is 0, skips creating duplicate payments.
+ */
+export async function registerOdooPayment(invoiceId, journalType = 'cash') {
+  if (!isOdooConfigured()) {
+    return { success: false, error: 'Odoo 19 is not configured' };
+  }
+
+  try {
+    const invList = await callOdooJson2('account.move', 'search_read', {
+      domain: [['id', '=', Number(invoiceId)]],
+      fields: ['id', 'name', 'state', 'payment_state', 'amount_residual', 'amount_total', 'partner_id', 'currency_id']
+    });
+
+    if (!invList || invList.length === 0) {
+      return { success: false, error: `Odoo Invoice #${invoiceId} not found` };
+    }
+
+    const inv = invList[0];
+
+    // 1. Idempotency Check: if invoice is already paid or has 0 residual, skip duplicate payment
+    if (inv.payment_state === 'paid' || inv.payment_state === 'in_payment' || Number(inv.amount_residual) <= 0) {
+      console.log(`[Odoo Payment] Invoice #${inv.name} (ID: ${inv.id}) is already settled (payment_state: ${inv.payment_state}). Skipping duplicate payment.`);
+      return {
+        success: true,
+        alreadyPaid: true,
+        invoiceId: inv.id,
+        invoiceNumber: inv.name,
+        paymentState: inv.payment_state,
+        amountPaid: Number(inv.amount_total) || 0
+      };
+    }
+
+    // 2. Locate Cash Journal (or Bank Journal)
+    let journalId = 15; // default Cash Journal in tumicspices Odoo instance
+    try {
+      const journals = await callOdooJson2('account.journal', 'search_read', {
+        domain: [['type', 'in', ['cash', 'bank']]],
+        fields: ['id', 'name', 'type', 'code']
+      });
+
+      const matchedJournal = journals.find(j => j.type === journalType.toLowerCase()) || journals[0];
+      if (matchedJournal) {
+        journalId = matchedJournal.id;
+      }
+    } catch (je) {
+      console.warn('[Odoo Payment] Journal lookup warning, using default journal #15:', je.message);
+    }
+
+    const amountToPay = Number(inv.amount_residual) || Number(inv.amount_total);
+
+    // 3. Create account.payment.register wizard
+    const context = {
+      active_model: 'account.move',
+      active_ids: [inv.id],
+      active_id: inv.id
+    };
+
+    console.log(`[Odoo Payment] Registering payment of ₹${amountToPay} for Invoice #${inv.name} in Journal #${journalId}...`);
+
+    const wizardRes = await callOdooJson2('account.payment.register', 'create', {
+      vals_list: [{
+        amount: amountToPay,
+        payment_date: new Date().toISOString().substring(0, 10),
+        journal_id: journalId,
+        communication: `COD Payment for ${inv.name}`
+      }],
+      context: context
+    });
+
+    const wizardId = Array.isArray(wizardRes) ? (wizardRes[0].id || wizardRes[0]) : (wizardRes.id || wizardRes);
+
+    // 4. Execute action_create_payments
+    await callOdooJson2('account.payment.register', 'action_create_payments', {
+      ids: [wizardId],
+      context: context
+    });
+
+    // 5. Verify updated invoice state
+    const afterList = await callOdooJson2('account.move', 'search_read', {
+      domain: [['id', '=', Number(invoiceId)]],
+      fields: ['id', 'name', 'state', 'payment_state', 'amount_residual', 'amount_total']
+    });
+
+    const updatedInv = afterList && afterList.length > 0 ? afterList[0] : inv;
+    console.log(`[Odoo Payment] Successfully registered payment for Invoice #${updatedInv.name}. New payment_state: ${updatedInv.payment_state}`);
+
+    return {
+      success: true,
+      invoiceId: updatedInv.id,
+      invoiceNumber: updatedInv.name,
+      amountPaid: amountToPay,
+      paymentState: updatedInv.payment_state
+    };
+  } catch (err) {
+    console.error(`[Odoo Payment Error for Invoice #${invoiceId}]:`, err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+

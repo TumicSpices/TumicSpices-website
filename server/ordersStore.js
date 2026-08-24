@@ -160,7 +160,7 @@ export function updateOrderWhatsAppStatus(orderId, waResult) {
   return order;
 }
 
-export function updateOrderStatus(orderId, newStatus) {
+export function updateOrderStatus(orderId, newStatus, extraUpdates = {}) {
   ensureStorage();
   const orders = getAllOrders();
   const order = orders.find(o => o.id === orderId || (o.odooInvoiceName && o.odooInvoiceName === orderId));
@@ -168,6 +168,9 @@ export function updateOrderStatus(orderId, newStatus) {
   if (!order) return null;
 
   order.orderStatus = newStatus;
+  if (extraUpdates && typeof extraUpdates === 'object') {
+    Object.assign(order, extraUpdates);
+  }
   order.updatedAt = new Date().toISOString();
   memoryOrders = orders;
 

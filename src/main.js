@@ -1383,13 +1383,14 @@ function renderAdminOrdersTable(orders) {
       : (order.odooInvoiceId ? `<strong style="color: #10B981; font-family: var(--font-mono);">INV-${order.odooInvoiceId}</strong>` : `<span style="color: var(--text-muted);">None</span>`);
 
     const currentStatus = order.orderStatus || 'Confirmed';
+    const isDelivered = currentStatus === 'Delivered' || currentStatus === 'Delivered & Payment Received';
     const statusSelectHtml = `
-      <select class="admin-order-status-select form-input" data-order-id="${order.id}" data-invoice-id="${order.odooInvoiceId || ''}">
+      <select class="admin-order-status-select form-input" data-order-id="${order.id}" data-invoice-id="${order.odooInvoiceId || ''}" data-current-status="${currentStatus}">
         <option value="Pending Confirmation" ${currentStatus === 'Pending Confirmation' ? 'selected' : ''}>⏳ Pending Confirmation</option>
         <option value="Confirmed" ${currentStatus === 'Confirmed' ? 'selected' : ''}>🎉 Confirmed</option>
         <option value="Getting Shipped" ${currentStatus === 'Getting Shipped' ? 'selected' : ''}>📦 Getting Shipped</option>
         <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>🚚 Shipped</option>
-        <option value="Delivered" ${currentStatus === 'Delivered' ? 'selected' : ''}>✅ Delivered</option>
+        <option value="Delivered & Payment Received" ${isDelivered ? 'selected' : ''}>💰 Delivered & Payment Received</option>
         <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
       </select>
     `;
@@ -1427,6 +1428,7 @@ function renderAdminOrdersTable(orders) {
       const orderId = sel.dataset.orderId;
       const odooInvoiceId = sel.dataset.invoiceId;
       const newStatus = sel.value;
+      const prevStatus = sel.dataset.currentStatus || 'Confirmed';
 
       sel.disabled = true;
       try {
@@ -1449,14 +1451,24 @@ function renderAdminOrdersTable(orders) {
 
         const data = await res.json();
         if (data.success) {
-          showToast(`✓ Order #${orderId} updated to "${newStatus}"`);
+          if (newStatus.includes('Payment') || data.paymentRegistered) {
+            showToast(`✓ Order #${orderId} marked Delivered & Payment recorded in Odoo!`);
+          } else {
+            showToast(`✓ Order #${orderId} updated to "${newStatus}"`);
+          }
+          sel.dataset.currentStatus = data.status || 'Delivered';
           const match = adminOrdersCache.find(o => o.id === orderId || (o.odooInvoiceId && String(o.odooInvoiceId) === String(odooInvoiceId)));
-          if (match) match.orderStatus = newStatus;
+          if (match) {
+            match.orderStatus = data.status || 'Delivered';
+            if (data.paymentState) match.paymentStatus = 'paid';
+          }
         } else {
           showToast(`⚠️ Status update failed: ${data.error || 'Check server logs'}`);
+          sel.value = prevStatus === 'Delivered' ? 'Delivered & Payment Received' : prevStatus;
         }
       } catch (err) {
         showToast(`Error updating status: ${err.message}`);
+        sel.value = prevStatus === 'Delivered' ? 'Delivered & Payment Received' : prevStatus;
       } finally {
         sel.disabled = false;
       }

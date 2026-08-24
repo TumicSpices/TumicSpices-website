@@ -1,5 +1,5 @@
 import { getAllOrders, getOrderById, saveOrder, updateOrderOdooStatus, updateOrderWhatsAppStatus, updateOrderStatus } from './ordersStore.js';
-import { syncOrderToOdoo, fetchOdooOrders, updateOdooOrderStatus, isOdooConfigured, getOdooConfig, testOdooConnection, updateEnvFile } from './odoo.js';
+import { syncOrderToOdoo, fetchOdooOrders, updateOdooOrderStatus, registerOdooPayment, isOdooConfigured, getOdooConfig, testOdooConnection, updateEnvFile } from './odoo.js';
 import { sendOrderWhatsAppNotification, isWhatsAppConfigured, getWhatsAppConfig } from './whatsapp.js';
 
 function parseRequestBody(req) {
@@ -449,7 +449,7 @@ export function createApiMiddleware() {
       }
     }
 
-    // 7. Admin Update Order Lifecycle Status (Protected & Persisted in Odoo 19)
+    // 7. Admin Update Order Lifecycle Status & Payment Registration (Protected & Persisted in Odoo 19)
     if (req.method === 'POST' && pathname === '/api/admin/orders/update-status') {
       if (!verifyAdminAuth(req)) {
         return sendJson(res, 401, { success: false, error: 'Unauthorized: Admin authorization required.' });
@@ -462,13 +462,31 @@ export function createApiMiddleware() {
           return sendJson(res, 400, { success: false, error: 'status is required' });
         }
 
-        const validStatuses = ['Pending Confirmation', 'Confirmed', 'Getting Shipped', 'Shipped', 'Delivered', 'Cancelled'];
-        const matchedStatus = validStatuses.find(s => s.toLowerCase() === String(status).trim().toLowerCase());
+        const rawStatus = String(status).trim();
+        const sLow = rawStatus.toLowerCase();
 
-        if (!matchedStatus) {
+        let targetStatus = 'Confirmed';
+        let isPaymentRegistration = false;
+
+        if (sLow.includes('payment') || sLow.includes('received') || sLow === 'delivered & payment received') {
+          targetStatus = 'Delivered';
+          isPaymentRegistration = true;
+        } else if (sLow.includes('pending')) {
+          targetStatus = 'Pending Confirmation';
+        } else if (sLow.includes('confirm')) {
+          targetStatus = 'Confirmed';
+        } else if (sLow.includes('getting') || sLow.includes('pack')) {
+          targetStatus = 'Getting Shipped';
+        } else if (sLow.includes('shipped')) {
+          targetStatus = 'Shipped';
+        } else if (sLow.includes('deliver')) {
+          targetStatus = 'Delivered';
+        } else if (sLow.includes('cancel')) {
+          targetStatus = 'Cancelled';
+        } else {
           return sendJson(res, 400, {
             success: false,
-            error: `Invalid status. Allowed statuses: ${validStatuses.join(', ')}`
+            error: 'Invalid status. Allowed: Pending Confirmation, Confirmed, Getting Shipped, Shipped, Delivered & Payment Received, Cancelled'
           });
         }
 
@@ -486,21 +504,38 @@ export function createApiMiddleware() {
           } catch (oe) {}
         }
 
+        let paymentResult = null;
+        if (isPaymentRegistration) {
+          if (invoiceIdToUpdate && isOdooConfigured()) {
+            paymentResult = await registerOdooPayment(invoiceIdToUpdate, 'cash');
+            if (!paymentResult.success) {
+              console.error(`[API /api/admin/orders/update-status] Payment registration failed for Invoice #${invoiceIdToUpdate}:`, paymentResult.error);
+              return sendJson(res, 500, {
+                success: false,
+                error: `Odoo payment registration failed: ${paymentResult.error}. Order status was NOT updated.`
+              });
+            }
+          }
+        }
+
         if (invoiceIdToUpdate) {
-          updatedOdoo = await updateOdooOrderStatus(invoiceIdToUpdate, matchedStatus);
+          updatedOdoo = await updateOdooOrderStatus(invoiceIdToUpdate, targetStatus);
         }
 
         if (orderId) {
-          updateOrderStatus(orderId, matchedStatus);
+          updateOrderStatus(orderId, targetStatus, isPaymentRegistration ? { paymentStatus: 'paid' } : {});
         }
 
-        console.log(`[API /api/admin/orders/update-status] Order #${orderId || invoiceIdToUpdate} updated to "${matchedStatus}". Odoo result:`, updatedOdoo?.success);
+        console.log(`[API /api/admin/orders/update-status] Order #${orderId || invoiceIdToUpdate} updated to "${targetStatus}". Payment registered:`, Boolean(paymentResult?.success));
 
         return sendJson(res, 200, {
           success: true,
           orderId: orderId || `INV-${invoiceIdToUpdate}`,
           odooInvoiceId: invoiceIdToUpdate || null,
-          status: matchedStatus,
+          status: targetStatus,
+          managerStatus: isPaymentRegistration ? 'Delivered & Payment Received' : targetStatus,
+          paymentRegistered: Boolean(paymentResult?.success),
+          paymentState: paymentResult?.paymentState || (isPaymentRegistration ? 'paid' : undefined),
           odooPersisted: Boolean(updatedOdoo?.success)
         });
       } catch (err) {

@@ -1,4 +1,6 @@
 import confetti from 'canvas-confetti';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 // ==========================================================================
 // Configuration & Constants
@@ -845,9 +847,14 @@ async function handlePlaceOrder(e) {
 // ==========================================================================
 // 8. Order Confirmation Modal
 // ==========================================================================
+let currentConfirmationOrder = null;
+
 function showOrderConfirmation(order) {
   const modal = document.getElementById('order-confirmation-modal');
   if (!modal) return;
+
+  // Store order reference for invoice download buttons
+  currentConfirmationOrder = order;
 
   if (typeof confetti === 'function') {
     confetti({
@@ -920,6 +927,386 @@ function closeOrderConfirmation() {
     document.body.style.overflow = '';
   }
 }
+
+// ==========================================================================
+// 8.5. Invoice Generation System (PNG & PDF Download)
+// ==========================================================================
+
+// --- Loading Overlay ---
+function showInvoiceLoading(message = 'Generating your invoice...') {
+  let overlay = document.getElementById('invoice-loading-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'invoice-loading-overlay';
+    overlay.className = 'invoice-loading-overlay';
+    overlay.innerHTML = `
+      <div class="invoice-loading-spinner"></div>
+      <div class="invoice-loading-text">${message}</div>
+      <div class="invoice-loading-sub">Please wait a moment...</div>
+    `;
+    document.body.appendChild(overlay);
+  } else {
+    overlay.querySelector('.invoice-loading-text').textContent = message;
+  }
+  requestAnimationFrame(() => overlay.classList.add('active'));
+}
+
+function hideInvoiceLoading() {
+  const overlay = document.getElementById('invoice-loading-overlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+}
+
+// --- Build Invoice DOM ---
+function generateInvoiceElement(order) {
+  // Ensure render area exists
+  let renderArea = document.getElementById('invoice-render-area');
+  if (!renderArea) {
+    renderArea = document.createElement('div');
+    renderArea.id = 'invoice-render-area';
+    document.body.appendChild(renderArea);
+  }
+
+  const invoiceNumber = order.odooInvoiceName || order.id || 'N/A';
+  const orderDate = order.date || (order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A');
+  const customerName = order.customer?.name || 'Customer';
+  const customerPhone = order.customer?.phone || '';
+  const customerAddress = [
+    order.customer?.address,
+    order.customer?.city,
+    order.customer?.state
+  ].filter(Boolean).join(', ');
+  const customerPin = order.customer?.pin || '';
+
+  // Payment status
+  const paymentMethod = order.paymentMethod || 'Cash on Delivery';
+  const paymentStatus = order.paymentStatus || 'unpaid';
+  let paymentLabel = 'Cash on Delivery';
+  let paymentUnpaid = true;
+  if (paymentStatus === 'paid') {
+    paymentLabel = 'Paid ✅';
+    paymentUnpaid = false;
+  } else if (paymentMethod.toLowerCase().includes('cash')) {
+    paymentLabel = 'Cash on Delivery';
+  } else {
+    paymentLabel = 'Payment Pending';
+  }
+
+  const orderStatus = order.orderStatus || 'Confirmed';
+
+  // Items rows
+  const items = order.items || [];
+  const itemsHtml = items.map(item => {
+    // Find product image from PRODUCTS_DATA
+    let imgSrc = '/assets/tumic-logo.png';
+    if (item.productKey && PRODUCTS_DATA[item.productKey]) {
+      imgSrc = PRODUCTS_DATA[item.productKey].image;
+    } else if (item.image) {
+      imgSrc = item.image;
+    }
+
+    const itemTotal = (item.price || 0) * (item.quantity || 1);
+    return `
+      <tr>
+        <td>
+          <div class="invoice-item-cell">
+            <img src="${imgSrc}" alt="${item.name || 'Product'}" class="invoice-item-img" crossorigin="anonymous" />
+            <div>
+              <div class="invoice-item-name">${item.name || 'Product'}</div>
+              <div class="invoice-item-weight">${item.weight || '100g'}</div>
+            </div>
+          </div>
+        </td>
+        <td>${item.quantity || 1}</td>
+        <td>₹${item.price || 0}</td>
+        <td>₹${itemTotal}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // Totals
+  const subtotal = order.subtotal || items.reduce((sum, i) => sum + ((i.price || 0) * (i.quantity || 1)), 0);
+  const deliveryFee = order.deliveryFee || 0;
+  const discountAmount = order.discountAmount || order.discount || 0;
+  const grandTotal = order.totalAmount || (subtotal + deliveryFee - discountAmount);
+
+  let discountRowHtml = '';
+  if (discountAmount > 0) {
+    discountRowHtml = `
+      <div class="invoice-total-row invoice-discount-row">
+        <span class="total-label">Discount</span>
+        <span class="total-value">-₹${discountAmount}</span>
+      </div>
+    `;
+  }
+
+  const invoiceHtml = `
+    <div class="invoice-page">
+      <!-- Header -->
+      <div class="invoice-header">
+        <div class="invoice-header-left">
+          <img src="/assets/tumic-logo.png" alt="Tumic Spices" class="invoice-logo-img" crossorigin="anonymous" />
+          <div class="invoice-brand-text">
+            <p class="invoice-brand-name">Tumic Spices</p>
+            <p class="invoice-brand-tagline">Asli Masala, Tumic Wala ✨</p>
+          </div>
+        </div>
+        <div class="invoice-header-right">
+          <p class="invoice-title-label">INVOICE</p>
+          <div class="invoice-company-details">
+            Tumic Spices, Khandwa<br>
+            Madhya Pradesh, India<br>
+            GST/FSSAI: Applied
+          </div>
+        </div>
+      </div>
+
+      <!-- Meta Strip -->
+      <div class="invoice-meta-strip">
+        <div class="invoice-meta-item">
+          <span class="invoice-meta-label">Invoice No.</span>
+          <span class="invoice-meta-value">#${invoiceNumber}</span>
+        </div>
+        <div class="invoice-meta-item">
+          <span class="invoice-meta-label">Order ID</span>
+          <span class="invoice-meta-value">#${order.id || 'N/A'}</span>
+        </div>
+        <div class="invoice-meta-item">
+          <span class="invoice-meta-label">Date</span>
+          <span class="invoice-meta-value">${orderDate}</span>
+        </div>
+        <div class="invoice-meta-item">
+          <span class="invoice-meta-label">Payment</span>
+          <span class="invoice-meta-value">${paymentMethod.replace('Cash on Delivery (COD)', 'COD')}</span>
+        </div>
+      </div>
+
+      <!-- Addresses -->
+      <div class="invoice-addresses">
+        <div class="invoice-address-block">
+          <h4>From</h4>
+          <p>
+            <span class="address-name">Tumic Spices</span><br>
+            Khandwa, Madhya Pradesh<br>
+            India<br>
+            📞 +91 86044 46189
+          </p>
+        </div>
+        <div class="invoice-address-block">
+          <h4>Bill To / Ship To</h4>
+          <p>
+            <span class="address-name">${customerName}</span><br>
+            ${customerAddress}${customerPin ? ' - ' + customerPin : ''}<br>
+            ${customerPhone ? '📞 +91 ' + customerPhone : ''}
+          </p>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="invoice-items-section">
+        <h4 class="invoice-items-title">Ordered Items</h4>
+        <table class="invoice-items-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Totals -->
+      <div class="invoice-totals">
+        <div class="invoice-totals-box">
+          <div class="invoice-total-row">
+            <span class="total-label">Subtotal</span>
+            <span class="total-value">₹${subtotal}</span>
+          </div>
+          <div class="invoice-total-row">
+            <span class="total-label">Delivery</span>
+            <span class="total-value invoice-free-delivery">${deliveryFee > 0 ? '₹' + deliveryFee : 'FREE ✅'}</span>
+          </div>
+          ${discountRowHtml}
+          <div class="invoice-total-row grand-total">
+            <span class="total-label">Grand Total</span>
+            <span class="total-value">₹${grandTotal}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Badges -->
+      <div class="invoice-status-section">
+        <span class="invoice-status-badge invoice-status-payment ${paymentUnpaid ? 'unpaid' : ''}">
+          ${paymentUnpaid ? '⏳' : '✅'} Payment: ${paymentLabel}
+        </span>
+        <span class="invoice-status-badge invoice-status-order">
+          📦 Status: ${orderStatus}
+        </span>
+      </div>
+
+      <!-- Footer -->
+      <div class="invoice-footer">
+        <p class="invoice-footer-thanks">Thank you for choosing Tumic Spices! 🙏</p>
+        <p class="invoice-footer-tagline">Asli Masala, Tumic Wala — Fresh ground spices delivered to your door.</p>
+        <div class="invoice-footer-divider"></div>
+        <p class="invoice-footer-contact">
+          📞 +91 86044 46189 &nbsp;|&nbsp; 🌐 tumicspices.com &nbsp;|&nbsp; 📍 Khandwa, MP, India
+        </p>
+      </div>
+    </div>
+  `;
+
+  renderArea.innerHTML = invoiceHtml;
+  return renderArea.querySelector('.invoice-page');
+}
+
+// --- Download as PNG ---
+async function downloadInvoicePNG(order) {
+  if (!order) {
+    showToast('❌ No order data available for invoice generation.');
+    return;
+  }
+
+  showInvoiceLoading('Generating PNG invoice...');
+
+  try {
+    const invoiceEl = generateInvoiceElement(order);
+
+    // Small delay for images and fonts to render
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const canvas = await html2canvas(invoiceEl, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#FFFFFF',
+      logging: false,
+      width: invoiceEl.scrollWidth,
+      height: invoiceEl.scrollHeight
+    });
+
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    const link = document.createElement('a');
+    link.download = `Tumic-Invoice-${order.id || 'order'}.png`;
+    link.href = dataUrl;
+    link.click();
+
+    showToast('✅ Invoice PNG downloaded successfully!');
+  } catch (err) {
+    console.error('[Invoice PNG Error]:', err);
+    showToast(`❌ Failed to generate PNG invoice: ${err.message}`);
+  } finally {
+    hideInvoiceLoading();
+  }
+}
+
+// --- Download as PDF ---
+async function downloadInvoicePDF(order) {
+  if (!order) {
+    showToast('❌ No order data available for invoice generation.');
+    return;
+  }
+
+  showInvoiceLoading('Generating PDF invoice...');
+
+  try {
+    const invoiceEl = generateInvoiceElement(order);
+
+    // Small delay for images and fonts to render
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const canvas = await html2canvas(invoiceEl, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#FFFFFF',
+      logging: false,
+      width: invoiceEl.scrollWidth,
+      height: invoiceEl.scrollHeight
+    });
+
+    const imgData = canvas.toDataURL('image/png', 1.0);
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+
+    // A4 dimensions in mm: 210 x 297
+    const pdfWidth = 210;
+    const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
+
+    // If invoice is taller than one page, use custom height; otherwise use A4
+    const pageHeight = Math.max(pdfHeight, 297);
+    const pdf = new jsPDF({
+      orientation: pdfHeight > 297 ? 'portrait' : 'portrait',
+      unit: 'mm',
+      format: [pdfWidth, pageHeight]
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Tumic-Invoice-${order.id || 'order'}.pdf`);
+
+    showToast('✅ Invoice PDF downloaded successfully!');
+  } catch (err) {
+    console.error('[Invoice PDF Error]:', err);
+    showToast(`❌ Failed to generate PDF invoice: ${err.message}`);
+  } finally {
+    hideInvoiceLoading();
+  }
+}
+
+// --- Handle download from tracking cards (uses inline onclick with JSON order data) ---
+function handleTrackInvoiceDownload(orderId, format) {
+  // Find order from localStorage or from the tracking result DOM data
+  let order = null;
+
+  try {
+    const allOrders = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
+    order = allOrders.find(o => o.id === orderId);
+  } catch (e) {}
+
+  // Fallback: check the last order
+  if (!order) {
+    try {
+      const lastOrder = JSON.parse(localStorage.getItem(LAST_ORDER_KEY) || 'null');
+      if (lastOrder && lastOrder.id === orderId) {
+        order = lastOrder;
+      }
+    } catch (e) {}
+  }
+
+  // Fallback: fetch from API
+  if (!order) {
+    showInvoiceLoading('Fetching order details...');
+    fetch(`/api/orders/lookup?query=${encodeURIComponent(orderId)}`)
+      .then(r => r.json())
+      .then(data => {
+        hideInvoiceLoading();
+        if (data.success && (data.order || (data.orders && data.orders.length > 0))) {
+          const fetchedOrder = data.order || data.orders.find(o => o.id === orderId) || data.orders[0];
+          if (format === 'png') downloadInvoicePNG(fetchedOrder);
+          else downloadInvoicePDF(fetchedOrder);
+        } else {
+          showToast('❌ Could not find order data for invoice.');
+        }
+      })
+      .catch(err => {
+        hideInvoiceLoading();
+        showToast(`❌ Failed to fetch order: ${err.message}`);
+      });
+    return;
+  }
+
+  if (format === 'png') downloadInvoicePNG(order);
+  else downloadInvoicePDF(order);
+}
+
+// Make handleTrackInvoiceDownload available globally for inline onclick handlers
+window.handleTrackInvoiceDownload = handleTrackInvoiceDownload;
 
 // ==========================================================================
 // 9. Customer Order Tracking System (Interactive Lifecycle Progress)
@@ -1103,6 +1490,17 @@ function renderTrackOrderCard(o, isExpanded = true, isMultiple = false, idx = 0)
           <a href="${waInquiryUrl}" target="_blank" class="btn btn-whatsapp btn-sm" style="width: 100%; justify-content: center;">
             <span>💬 Contact Store on WhatsApp</span>
           </a>
+
+          <div class="track-invoice-btns">
+            <button class="btn btn-invoice-download btn-invoice-png" onclick="handleTrackInvoiceDownload('${o.id}', 'png')">
+              <span class="invoice-btn-icon">🖼️</span>
+              <span class="invoice-btn-text">Invoice PNG</span>
+            </button>
+            <button class="btn btn-invoice-download btn-invoice-pdf" onclick="handleTrackInvoiceDownload('${o.id}', 'pdf')">
+              <span class="invoice-btn-icon">📄</span>
+              <span class="invoice-btn-text">Invoice PDF</span>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -1152,6 +1550,17 @@ function renderTrackOrderCard(o, isExpanded = true, isMultiple = false, idx = 0)
       <a href="${waInquiryUrl}" target="_blank" class="btn btn-whatsapp btn-sm" style="width: 100%; justify-content: center;">
         <span>💬 Contact Store on WhatsApp</span>
       </a>
+
+      <div class="track-invoice-btns">
+        <button class="btn btn-invoice-download btn-invoice-png" onclick="handleTrackInvoiceDownload('${o.id}', 'png')">
+          <span class="invoice-btn-icon">🖼️</span>
+          <span class="invoice-btn-text">Invoice PNG</span>
+        </button>
+        <button class="btn btn-invoice-download btn-invoice-pdf" onclick="handleTrackInvoiceDownload('${o.id}', 'pdf')">
+          <span class="invoice-btn-icon">📄</span>
+          <span class="invoice-btn-text">Invoice PDF</span>
+        </button>
+      </div>
     </div>
   `;
 }
@@ -2179,6 +2588,29 @@ function init() {
   if (receiptOverlay) {
     receiptOverlay.addEventListener('click', (e) => {
       if (e.target === receiptOverlay) closeOrderConfirmation();
+    });
+  }
+
+  // Invoice Download Button listeners (Order Confirmation Modal)
+  const receiptPngBtn = document.getElementById('receipt-download-png-btn');
+  const receiptPdfBtn = document.getElementById('receipt-download-pdf-btn');
+
+  if (receiptPngBtn) {
+    receiptPngBtn.addEventListener('click', () => {
+      if (currentConfirmationOrder) {
+        downloadInvoicePNG(currentConfirmationOrder);
+      } else {
+        showToast('❌ Order data not available. Please try tracking your order.');
+      }
+    });
+  }
+  if (receiptPdfBtn) {
+    receiptPdfBtn.addEventListener('click', () => {
+      if (currentConfirmationOrder) {
+        downloadInvoicePDF(currentConfirmationOrder);
+      } else {
+        showToast('❌ Order data not available. Please try tracking your order.');
+      }
     });
   }
 

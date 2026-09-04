@@ -108,17 +108,53 @@ const PRODUCTS_DATA = {
 // 1. Toast Notification System
 // ==========================================================================
 let toastTimer = null;
-function showToast(message) {
+function showToast(message, type = 'info', duration = 3200) {
   const toast = document.getElementById('toast-notify');
   const toastMsg = document.getElementById('toast-msg');
+  const toastIcon = document.getElementById('toast-icon');
   if (!toast || !toastMsg) return;
-  toastMsg.textContent = message;
+
+  // Auto-detect type if default 'info'
+  if (type === 'info') {
+    if (message.startsWith('✓') || message.startsWith('✅') || message.includes('successfully') || message.includes('Delivered') || message.includes('Shipped') || message.includes('Paid')) {
+      type = 'success';
+    } else if (message.startsWith('❌') || message.startsWith('Error') || message.includes('failed') || message.includes('Failed')) {
+      type = 'error';
+    } else if (message.startsWith('⚠️') || message.startsWith('Warning')) {
+      type = 'warning';
+    }
+  }
+
+  toast.classList.remove('toast-success', 'toast-error', 'toast-warning', 'toast-info');
+  toast.classList.add(`toast-${type}`);
+
+  if (toastIcon) {
+    if (type === 'success') {
+      if (message.includes('Shipped') || message.includes('🚚')) toastIcon.textContent = '🚚';
+      else if (message.includes('Paid') || message.includes('💰')) toastIcon.textContent = '💰';
+      else toastIcon.textContent = '✅';
+    } else if (type === 'error') {
+      toastIcon.textContent = '❌';
+    } else if (type === 'warning') {
+      toastIcon.textContent = '⚠️';
+    } else {
+      toastIcon.textContent = '✨';
+    }
+  }
+
+  let cleanMsg = message;
+  if (toastIcon && /^[✓✅❌⚠️✨🚚📦💰🔒🔓]\s*/.test(cleanMsg)) {
+    cleanMsg = cleanMsg.replace(/^[✓✅❌⚠️✨🚚📦💰🔒🔓]\s*/, '');
+  }
+  toastMsg.textContent = cleanMsg;
 
   toast.classList.remove('hidden');
   clearTimeout(toastTimer);
+
+  const timeoutMs = type === 'error' ? Math.max(duration, 4500) : duration;
   toastTimer = setTimeout(() => {
     toast.classList.add('hidden');
-  }, 2200);
+  }, timeoutMs);
 }
 
 // ==========================================================================
@@ -1852,6 +1888,67 @@ async function fetchAdminOrders() {
   renderAdminOrdersTable(adminOrdersCache);
 }
 
+async function executeAdminStatusUpdate(orderId, odooInvoiceId, newStatus, prevStatus = 'Confirmed', triggerEl = null) {
+  if (triggerEl) triggerEl.disabled = true;
+  try {
+    const res = await fetch('/api/admin/orders/update-status', {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({
+        orderId,
+        odooInvoiceId: odooInvoiceId ? Number(odooInvoiceId) : null,
+        status: newStatus
+      })
+    });
+
+    if (res.status === 401) {
+      clearAdminSessionPin();
+      closeAdminDashboardModal();
+      showAdminPinModal();
+      return false;
+    }
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      if (data.action === 'shipped' || newStatus === 'Shipped') {
+        showToast(`🚚 Order #${orderId} marked as Shipped! Customer tracking updated.`, 'success', 3500);
+      } else if (data.action === 'delivered' || newStatus === 'Delivered') {
+        showToast(`✅ Order #${orderId} marked as Delivered successfully!`, 'success', 3500);
+      } else if (data.action === 'paid' || newStatus === 'Paid' || data.paymentRegistered) {
+        const odooInfo = data.odooPersisted ? ' & reconciled in Odoo' : '';
+        showToast(`💰 Payment Received for Order #${orderId}! Marked Paid${odooInfo}.`, 'success', 4000);
+      } else {
+        showToast(`✓ Order #${orderId} updated to "${data.status || newStatus}"`, 'success', 3000);
+      }
+
+      const match = adminOrdersCache.find(o => o.id === orderId || (o.odooInvoiceId && String(o.odooInvoiceId) === String(odooInvoiceId)));
+      if (match) {
+        match.orderStatus = data.status || (newStatus === 'Paid' ? 'Delivered' : newStatus);
+        if (data.paymentStatus === 'paid' || data.action === 'paid' || newStatus === 'Paid' || data.paymentRegistered) {
+          match.paymentStatus = 'paid';
+          match.payment_state = 'paid';
+        }
+        renderAdminOrdersTable(adminOrdersCache);
+      }
+      return true;
+    } else {
+      showToast(`❌ Update failed for Order #${orderId}: ${data.error || 'Server error'}. Status was not changed.`, 'error', 4500);
+      if (triggerEl && triggerEl.tagName === 'SELECT') {
+        triggerEl.value = prevStatus;
+      }
+      return false;
+    }
+  } catch (err) {
+    showToast(`❌ Network error updating Order #${orderId}: ${err.message}`, 'error', 4500);
+    if (triggerEl && triggerEl.tagName === 'SELECT') {
+      triggerEl.value = prevStatus;
+    }
+    return false;
+  } finally {
+    if (triggerEl) triggerEl.disabled = false;
+  }
+}
+
 function renderAdminOrdersTable(orders) {
   const tbody = document.getElementById('admin-orders-tbody');
   if (!tbody) return;
@@ -1885,14 +1982,18 @@ function renderAdminOrdersTable(orders) {
       : (order.odooInvoiceId ? `<strong style="color: #10B981; font-family: var(--font-mono);">INV-${order.odooInvoiceId}</strong>` : `<span style="color: var(--text-muted);">None</span>`);
 
     const currentStatus = order.orderStatus || 'Confirmed';
-    const isDelivered = currentStatus === 'Delivered' || currentStatus === 'Delivered & Payment Received';
+    const isPaid = order.paymentStatus === 'paid' || order.payment_state === 'in_payment' || order.payment_state === 'paid';
+    const isDeliveredSelected = currentStatus === 'Delivered' && !isPaid;
+    const isPaidSelected = isPaid && (currentStatus === 'Delivered' || currentStatus === 'Paid' || currentStatus === 'Delivered & Payment Received');
+
     const statusSelectHtml = `
-      <select class="admin-order-status-select form-input" data-order-id="${order.id}" data-invoice-id="${order.odooInvoiceId || ''}" data-current-status="${currentStatus}">
+      <select class="admin-order-status-select form-input" data-order-id="${order.id}" data-invoice-id="${order.odooInvoiceId || ''}" data-current-status="${currentStatus}" data-is-paid="${isPaid ? 'true' : 'false'}">
         <option value="Pending Confirmation" ${currentStatus === 'Pending Confirmation' ? 'selected' : ''}>⏳ Pending Confirmation</option>
         <option value="Confirmed" ${currentStatus === 'Confirmed' ? 'selected' : ''}>🎉 Confirmed</option>
         <option value="Getting Shipped" ${currentStatus === 'Getting Shipped' ? 'selected' : ''}>📦 Getting Shipped</option>
         <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>🚚 Shipped</option>
-        <option value="Delivered & Payment Received" ${isDelivered ? 'selected' : ''}>💰 Delivered & Payment Received</option>
+        <option value="Delivered" ${isDeliveredSelected ? 'selected' : ''}>✅ Delivered</option>
+        <option value="Paid" ${isPaidSelected ? 'selected' : ''}>💰 Paid / Payment Received</option>
         <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
       </select>
     `;
@@ -1901,10 +2002,14 @@ function renderAdminOrdersTable(orders) {
       ? `<span style="color: #10B981; font-size: 0.78rem; font-weight: 700;">✓ Ready</span>`
       : `<button class="btn-retry-sync btn btn-outline btn-sm" data-order-id="${order.id}">🔄 Retry</button>`;
 
-    const isPaid = order.paymentStatus === 'paid' || order.payment_state === 'in_payment' || order.payment_state === 'paid' || isDelivered;
     const paymentBadgeHtml = isPaid
       ? `<span style="color: #065F46; font-weight: 700; background: #D1FAE5; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-block; margin-bottom: 3px;">🟢 Paid</span>`
-      : `<span style="color: #92400E; font-weight: 700; background: #FEF3C7; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-block; margin-bottom: 3px;">🟡 Unpaid</span>`;
+      : `
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+          <span style="color: #92400E; font-weight: 700; background: #FEF3C7; padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.72rem; display: inline-block;">🟡 Unpaid</span>
+          <button type="button" class="btn-mark-paid" data-order-id="${order.id}" data-invoice-id="${order.odooInvoiceId || ''}" title="Mark Payment as Received in Odoo">💰 Mark Paid</button>
+        </div>
+      `;
 
     html += `
       <tr data-order-id="${order.id}" class="admin-order-row" title="Click to view full Order Details for #${order.id}">
@@ -1918,7 +2023,7 @@ function renderAdminOrdersTable(orders) {
         <td style="font-family: var(--font-mono); font-weight: 700; color: var(--primary);">₹${order.totalAmount}</td>
         <td>
           ${paymentBadgeHtml}
-          <small style="display: block; color: var(--text-muted);">${order.paymentMethod || 'COD'}</small>
+          <small style="display: block; color: var(--text-muted); margin-top: 2px;">${order.paymentMethod || 'COD'}</small>
         </td>
         <td>${invDisplay}</td>
         <td onclick="event.stopPropagation();">${statusSelectHtml}</td>
@@ -1933,7 +2038,7 @@ function renderAdminOrdersTable(orders) {
   // Row click listeners to open Order Details Modal
   tbody.querySelectorAll('.admin-order-row').forEach(row => {
     row.addEventListener('click', (e) => {
-      if (e.target.closest('.admin-order-status-select') || e.target.closest('.btn-retry-sync') || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || e.target.tagName === 'BUTTON') {
+      if (e.target.closest('.admin-order-status-select') || e.target.closest('.btn-retry-sync') || e.target.closest('.btn-mark-paid') || e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || e.target.tagName === 'BUTTON') {
         return;
       }
       const orderId = row.dataset.orderId;
@@ -1951,53 +2056,20 @@ function renderAdminOrdersTable(orders) {
       const orderId = sel.dataset.orderId;
       const odooInvoiceId = sel.dataset.invoiceId;
       const newStatus = sel.value;
-      const prevStatus = sel.dataset.currentStatus || 'Confirmed';
+      const isPaid = sel.dataset.isPaid === 'true';
+      const prevSelectVal = isPaid ? 'Paid' : (sel.dataset.currentStatus || 'Confirmed');
 
-      sel.disabled = true;
-      try {
-        const res = await fetch('/api/admin/orders/update-status', {
-          method: 'POST',
-          headers: getAdminHeaders(),
-          body: JSON.stringify({
-            orderId,
-            odooInvoiceId: odooInvoiceId ? Number(odooInvoiceId) : null,
-            status: newStatus
-          })
-        });
+      await executeAdminStatusUpdate(orderId, odooInvoiceId, newStatus, prevSelectVal, sel);
+    });
+  });
 
-        if (res.status === 401) {
-          clearAdminSessionPin();
-          closeAdminDashboardModal();
-          showAdminPinModal();
-          return;
-        }
-
-        const data = await res.json();
-        if (data.success) {
-          if (newStatus.includes('Payment') || data.paymentRegistered) {
-            showToast(`✓ Order #${orderId} marked Delivered & Payment recorded in Odoo!`);
-          } else {
-            showToast(`✓ Order #${orderId} updated to "${newStatus}"`);
-          }
-          sel.dataset.currentStatus = data.status || 'Delivered';
-          const match = adminOrdersCache.find(o => o.id === orderId || (o.odooInvoiceId && String(o.odooInvoiceId) === String(odooInvoiceId)));
-          if (match) {
-            match.orderStatus = data.status || 'Delivered';
-            if (data.paymentState || newStatus.includes('Payment')) {
-              match.paymentStatus = 'paid';
-            }
-            renderAdminOrdersTable(adminOrdersCache);
-          }
-        } else {
-          showToast(`⚠️ Status update failed: ${data.error || 'Check server logs'}`);
-          sel.value = prevStatus === 'Delivered' ? 'Delivered & Payment Received' : prevStatus;
-        }
-      } catch (err) {
-        showToast(`Error updating status: ${err.message}`);
-        sel.value = prevStatus === 'Delivered' ? 'Delivered & Payment Received' : prevStatus;
-      } finally {
-        sel.disabled = false;
-      }
+  // Mark Paid button listeners
+  tbody.querySelectorAll('.btn-mark-paid').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const orderId = btn.dataset.orderId;
+      const odooInvoiceId = btn.dataset.invoiceId;
+      await executeAdminStatusUpdate(orderId, odooInvoiceId, 'Paid', 'Delivered', btn);
     });
   });
 
@@ -2048,7 +2120,7 @@ function openAdminOrderDetailsModal(order) {
   if (titleEl) titleEl.textContent = `Order #${order.id}`;
   if (subtitleEl) subtitleEl.textContent = `Placed on ${order.date || new Date(order.createdAt).toLocaleDateString('en-IN')}`;
 
-  const isPaid = order.paymentStatus === 'paid' || order.payment_state === 'in_payment' || order.payment_state === 'paid' || order.orderStatus === 'Delivered';
+  const isPaid = order.paymentStatus === 'paid' || order.payment_state === 'in_payment' || order.payment_state === 'paid';
   const orderDateStr = order.date || (order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Recent');
   const statusBadge = getStatusBadgeHtml(order.orderStatus || 'Confirmed');
   const timelineHtml = renderOrderTimeline(order.orderStatus || 'Confirmed');
@@ -2110,6 +2182,14 @@ function openAdminOrderDetailsModal(order) {
         </div>
       </div>
       ${timelineHtml}
+
+      <!-- Quick Status Actions Inside Modal -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-light); align-items: center;">
+        <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Quick Actions:</span>
+        <button type="button" class="btn btn-outline btn-sm btn-modal-status-action" data-status="Shipped" ${order.orderStatus === 'Shipped' ? 'disabled style="opacity:0.5;"' : ''}>🚚 Mark Shipped</button>
+        <button type="button" class="btn btn-outline btn-sm btn-modal-status-action" data-status="Delivered" ${order.orderStatus === 'Delivered' ? 'disabled style="opacity:0.5;"' : ''}>✅ Mark Delivered</button>
+        ${!isPaid ? `<button type="button" class="btn btn-primary btn-sm btn-modal-status-action" data-status="Paid" style="background: #10B981; border-color: #059669;">💰 Mark Payment Received</button>` : `<span style="color: #065F46; font-size: 0.78rem; font-weight: 700;">✓ Payment Settled</span>`}
+      </div>
     </div>
 
     <!-- 2-Column Overview Cards -->
@@ -2234,6 +2314,23 @@ function openAdminOrderDetailsModal(order) {
       ` : ''}
     </div>
   `;
+
+  // Quick status action buttons inside details modal
+  content.querySelectorAll('.btn-modal-status-action').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const targetStatus = btn.dataset.status;
+      const success = await executeAdminStatusUpdate(order.id, order.odooInvoiceId, targetStatus, order.orderStatus, btn);
+      if (success) {
+        order.orderStatus = targetStatus === 'Paid' ? 'Delivered' : targetStatus;
+        if (targetStatus === 'Paid') {
+          order.paymentStatus = 'paid';
+          order.payment_state = 'paid';
+        }
+        openAdminOrderDetailsModal(order);
+      }
+    });
+  });
 
   // Attach footer back button listener
   const footerBackBtn = document.getElementById('admin-details-footer-back-btn');

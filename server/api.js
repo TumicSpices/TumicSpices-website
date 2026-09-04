@@ -525,10 +525,12 @@ export function createApiMiddleware() {
 
         let targetStatus = 'Confirmed';
         let isPaymentRegistration = false;
+        let actionType = 'updated';
 
-        if (sLow.includes('paid') || sLow.includes('payment') || sLow.includes('received') || sLow === 'delivered & payment received' || sLow === 'delivered & paid') {
+        if (sLow.includes('paid') || sLow.includes('payment') || sLow.includes('received')) {
           targetStatus = 'Delivered';
           isPaymentRegistration = true;
+          actionType = 'paid';
         } else if (sLow.includes('pending')) {
           targetStatus = 'Pending Confirmation';
         } else if (sLow.includes('confirm')) {
@@ -537,19 +539,25 @@ export function createApiMiddleware() {
           targetStatus = 'Getting Shipped';
         } else if (sLow.includes('shipped')) {
           targetStatus = 'Shipped';
+          actionType = 'shipped';
         } else if (sLow.includes('deliver')) {
           targetStatus = 'Delivered';
+          actionType = 'delivered';
         } else if (sLow.includes('cancel')) {
           targetStatus = 'Cancelled';
         } else {
           return sendJson(res, 400, {
             success: false,
-            error: 'Invalid status. Allowed: Pending Confirmation, Confirmed, Getting Shipped, Shipped, Delivered & Payment Received, Cancelled'
+            error: 'Invalid status. Allowed: Pending Confirmation, Confirmed, Getting Shipped, Shipped, Delivered, Paid / Payment Received, Cancelled'
           });
         }
 
         let updatedOdoo = null;
         let invoiceIdToUpdate = odooInvoiceId;
+        const existingLocalOrder = orderId ? getOrderById(orderId) : null;
+        if (!invoiceIdToUpdate && existingLocalOrder?.odooInvoiceId) {
+          invoiceIdToUpdate = existingLocalOrder.odooInvoiceId;
+        }
 
         // If invoice ID wasn't provided, look it up in Odoo
         if (!invoiceIdToUpdate && orderId && isOdooConfigured()) {
@@ -560,6 +568,10 @@ export function createApiMiddleware() {
               invoiceIdToUpdate = found.odooInvoiceId;
             }
           } catch (oe) {}
+        }
+
+        if (isPaymentRegistration && existingLocalOrder?.orderStatus) {
+          targetStatus = existingLocalOrder.orderStatus || 'Delivered';
         }
 
         let paymentResult = null;
@@ -580,18 +592,23 @@ export function createApiMiddleware() {
           updatedOdoo = await updateOdooOrderStatus(invoiceIdToUpdate, targetStatus, isPaymentRegistration);
         }
 
+        let updatedLocal = null;
         if (orderId) {
-          updateOrderStatus(orderId, targetStatus, isPaymentRegistration ? { paymentStatus: 'paid' } : {});
+          updatedLocal = updateOrderStatus(orderId, targetStatus, isPaymentRegistration ? { paymentStatus: 'paid' } : {});
         }
 
-        console.log(`[API /api/admin/orders/update-status] Order #${orderId || invoiceIdToUpdate} updated to "${targetStatus}". Payment registered:`, Boolean(paymentResult?.success));
+        console.log(`[API /api/admin/orders/update-status] Order #${orderId || invoiceIdToUpdate} updated to "${targetStatus}". Action: ${actionType}. Payment registered:`, Boolean(paymentResult?.success));
+
+        const finalPaymentStatus = isPaymentRegistration ? 'paid' : (updatedLocal?.paymentStatus || existingLocalOrder?.paymentStatus || 'unpaid');
 
         return sendJson(res, 200, {
           success: true,
           orderId: orderId || `INV-${invoiceIdToUpdate}`,
           odooInvoiceId: invoiceIdToUpdate || null,
           status: targetStatus,
-          managerStatus: isPaymentRegistration ? 'Delivered & Payment Received' : targetStatus,
+          paymentStatus: finalPaymentStatus,
+          action: actionType,
+          managerStatus: isPaymentRegistration ? 'Paid' : targetStatus,
           paymentRegistered: Boolean(paymentResult?.success),
           paymentState: paymentResult?.paymentState || (isPaymentRegistration ? 'paid' : undefined),
           odooPersisted: Boolean(updatedOdoo?.success)

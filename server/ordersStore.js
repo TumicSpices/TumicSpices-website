@@ -14,6 +14,18 @@ const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 // In-memory fallback cache
 let memoryOrders = [];
 
+function getDeployedOrders() {
+  try {
+    const deployedFile = path.join(__dirname, 'data', 'orders.json');
+    if (fs.existsSync(deployedFile)) {
+      const raw = fs.readFileSync(deployedFile, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
 // Ensure data directory and orders.json exist
 function ensureStorage() {
   try {
@@ -21,7 +33,12 @@ function ensureStorage() {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     if (!fs.existsSync(ORDERS_FILE)) {
-      fs.writeFileSync(ORDERS_FILE, JSON.stringify([], null, 2), 'utf-8');
+      // If deployed orders exist, seed initial orders file
+      const initialSeed = getDeployedOrders();
+      fs.writeFileSync(ORDERS_FILE, JSON.stringify(initialSeed, null, 2), 'utf-8');
+      if (initialSeed.length > 0 && memoryOrders.length === 0) {
+        memoryOrders = initialSeed;
+      }
     }
   } catch (err) {
     // In serverless read-only contexts, gracefully fallback to memory
@@ -31,24 +48,44 @@ function ensureStorage() {
 
 export function getAllOrders() {
   ensureStorage();
+  let diskOrders = [];
   try {
     if (fs.existsSync(ORDERS_FILE)) {
       const raw = fs.readFileSync(ORDERS_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        memoryOrders = parsed;
+      if (Array.isArray(parsed)) {
+        diskOrders = parsed;
       }
-      return parsed;
     }
   } catch (err) {
     console.error('[OrdersStore] Error reading orders from disk, using memory cache:', err.message);
   }
+
+  // Merge disk and memory orders safely
+  if (diskOrders.length > 0 || memoryOrders.length > 0) {
+    const map = new Map();
+    // Memory orders take precedence for recent updates
+    memoryOrders.forEach(o => { if (o && o.id) map.set(o.id.toLowerCase(), o); });
+    diskOrders.forEach(o => { if (o && o.id && !map.has(o.id.toLowerCase())) map.set(o.id.toLowerCase(), o); });
+    memoryOrders = Array.from(map.values());
+    return memoryOrders;
+  }
+
+  // Fallback to deployed historical orders if available
+  const deployed = getDeployedOrders();
+  if (deployed.length > 0) {
+    memoryOrders = deployed;
+    return memoryOrders;
+  }
+
   return memoryOrders;
 }
 
 export function getOrderById(id) {
+  if (!id) return null;
   const orders = getAllOrders();
-  return orders.find(o => o.id === id) || null;
+  const searchId = String(id).toLowerCase();
+  return orders.find(o => o.id && o.id.toLowerCase() === searchId) || null;
 }
 
 export function saveOrder(order) {
@@ -80,10 +117,15 @@ export function saveOrder(order) {
 export function updateOrderOdooStatus(orderId, odooResult) {
   ensureStorage();
   const orders = getAllOrders();
-  const order = orders.find(o => o.id === orderId);
+  let order = orders.find(o => o.id === orderId) || memoryOrders.find(o => o.id === orderId);
 
   if (!order) {
-    throw new Error(`Order ${orderId} not found`);
+    console.warn(`[OrdersStore] Order ${orderId} not found in cache during Odoo status update, registering stub.`);
+    order = {
+      id: orderId,
+      createdAt: new Date().toISOString()
+    };
+    orders.unshift(order);
   }
 
   if (odooResult.success) {

@@ -656,18 +656,29 @@ export async function syncOrderToOdoo(order) {
     // 2. Invoice (Create and post invoice in account.move)
     const invResult = await createDirectInvoice(order, partnerId);
 
-    // 3. Automatically send the customer invoice email
+    // 3. Automatically send notifications (customer invoice email & admin notification email in parallel)
     let customerEmailResult = { sent: false };
-    if (invResult.invoiceId) {
-      customerEmailResult = await sendOdooInvoiceEmail(invResult.invoiceId);
-    }
-
-    // 4. Automatically send the store admin order notification email
     let adminEmailResult = { sent: false };
-    try {
-      adminEmailResult = await sendAdminOrderNotificationEmail(order, invResult);
-    } catch (e) {
-      console.warn('[Odoo Sync] Admin email warning:', e.message);
+
+    if (invResult.invoiceId) {
+      const [custRes, adminRes] = await Promise.allSettled([
+        sendOdooInvoiceEmail(invResult.invoiceId),
+        sendAdminOrderNotificationEmail(order, invResult)
+      ]);
+
+      if (custRes.status === 'fulfilled' && custRes.value) {
+        customerEmailResult = custRes.value;
+      } else if (custRes.status === 'rejected') {
+        console.warn('[Odoo Sync] Customer invoice email rejected:', custRes.reason?.message);
+        customerEmailResult = { sent: false, error: custRes.reason?.message };
+      }
+
+      if (adminRes.status === 'fulfilled' && adminRes.value) {
+        adminEmailResult = adminRes.value;
+      } else if (adminRes.status === 'rejected') {
+        console.warn('[Odoo Sync] Admin order email rejected:', adminRes.reason?.message);
+        adminEmailResult = { sent: false, error: adminRes.reason?.message };
+      }
     }
 
     return {
@@ -764,9 +775,12 @@ export async function fetchOdooOrders(limit = 100) {
       const lines = linesByMoveId[inv.id] || [];
 
       const items = lines.map(line => {
-        const weightMatch = line.name?.match(/(\d+\s*(?:g|kg|gm|ml|l))/i);
+        const rawLineName = typeof line.name === 'string' 
+          ? line.name 
+          : (typeof line.name === 'object' && line.name ? (line.name.en_US || Object.values(line.name)[0] || '') : '');
+        const weightMatch = rawLineName ? rawLineName.match(/(\d+\s*(?:g|kg|gm|ml|l))/i) : null;
         const weight = weightMatch ? weightMatch[1] : '100g';
-        const cleanName = line.name ? line.name.replace(/\s*\([^)]+\)\s*$/, '').trim() : 'Spice Product';
+        const cleanName = rawLineName ? rawLineName.replace(/\s*\([^)]+\)\s*$/, '').trim() : 'Spice Product';
 
         return {
           id: `line_${line.id}`,
@@ -777,16 +791,18 @@ export async function fetchOdooOrders(limit = 100) {
         };
       });
 
-      const orderId = inv.ref || (inv.name ? `TUMIC-${inv.name.replace(/\D/g, '')}` : `OD-${inv.id}`);
+      const orderId = (typeof inv.ref === 'string' && inv.ref) 
+        ? inv.ref 
+        : ((typeof inv.name === 'string' && inv.name) ? `TUMIC-${inv.name.replace(/\D/g, '')}` : `OD-${inv.id}`);
       const dateStr = inv.create_date || inv.invoice_date || new Date().toISOString();
 
-      let extractedAddress = partner.street || '';
-      let extractedPhone = partner.phone || '';
-      let extractedEmail = partner.email || '';
+      let extractedAddress = typeof partner.street === 'string' ? partner.street : '';
+      let extractedPhone = typeof partner.phone === 'string' ? partner.phone : '';
+      let extractedEmail = typeof partner.email === 'string' ? partner.email : '';
       let extractedPayment = 'Cash on Delivery (COD)';
       let orderStatus = inv.state === 'posted' ? 'Confirmed' : 'Pending Confirmation';
 
-      if (inv.narration) {
+      if (typeof inv.narration === 'string' && inv.narration) {
         const narrationText = inv.narration.replace(/<[^>]+>/g, ' ');
 
         const phoneMatch = narrationText.match(/Phone:\s*([^\n\r<]+)/i);
@@ -801,7 +817,6 @@ export async function fetchOdooOrders(limit = 100) {
         const payMatch = narrationText.match(/Payment Method:\s*([^\n\r<]+)/i);
         if (payMatch) extractedPayment = payMatch[1].trim();
 
-        const payStatusMatch = narrationText.match(/Payment Status:\s*([^\n\r<]+)/i);
         const statusMatch = narrationText.match(/(?<!Payment\s)Status:\s*([A-Za-z0-9\s]+)/i);
         if (statusMatch) {
           const rawStatus = statusMatch[1].trim();
@@ -820,27 +835,27 @@ export async function fetchOdooOrders(limit = 100) {
         }),
         createdAt: new Date(dateStr).toISOString(),
         customer: {
-          name: partner.name || inv.partner_id?.[1] || 'Store Customer',
+          name: (typeof partner.name === 'string' && partner.name) || (Array.isArray(inv.partner_id) ? inv.partner_id[1] : 'Store Customer'),
           phone: extractedPhone,
           email: extractedEmail,
           address: extractedAddress,
-          city: partner.city || 'Kanpur',
-          state: (partner.state_id && partner.state_id[1]) || 'Uttar Pradesh',
-          pin: partner.zip || ''
+          city: (typeof partner.city === 'string' && partner.city) || 'Kanpur',
+          state: (partner.state_id && Array.isArray(partner.state_id) ? partner.state_id[1] : 'Uttar Pradesh'),
+          pin: (typeof partner.zip === 'string' && partner.zip) || ''
         },
         items: items,
         subtotal: Number(inv.amount_untaxed) || Number(inv.amount_total) || 0,
         deliveryFee: 0,
         totalAmount: Number(inv.amount_total) || 0,
         paymentMethod: extractedPayment,
-        paymentStatus: (inv.payment_state === 'paid' || inv.payment_state === 'in_payment' || /Payment Status:\s*Paid/i.test(inv.narration || '')) ? 'paid' : 'unpaid',
+        paymentStatus: (inv.payment_state === 'paid' || inv.payment_state === 'in_payment' || (typeof inv.narration === 'string' && /Payment Status:\s*Paid/i.test(inv.narration))) ? 'paid' : 'unpaid',
         orderStatus: orderStatus,
         odooSyncStatus: 'synced',
         odooPartnerId: inv.partner_id?.[0] || null,
         odooOrderId: null,
         odooOrderName: null,
         odooInvoiceId: inv.id,
-        odooInvoiceName: inv.name,
+        odooInvoiceName: typeof inv.name === 'string' ? inv.name : (inv.name ? String(inv.name) : null),
         odooSyncedAt: inv.create_date || new Date().toISOString(),
         odooEmailSent: true
       };

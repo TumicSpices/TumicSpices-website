@@ -83,8 +83,11 @@ export function createApiMiddleware() {
     // Extract pathname safely across local Vite Connect, Vercel Serverless, and Proxies
     let rawPath = req.headers?.['x-matched-path'] || req.headers?.['x-forwarded-url'] || req.originalUrl || req.url || '/';
     
-    // In Vercel rewrites, destination could be /api/index.js or /api/index
-    if (rawPath.startsWith('/api/index.js') || rawPath.startsWith('/api/index') || rawPath === '/api') {
+    // In Vercel rewrites and catch-all dynamic functions:
+    if (req.query?.slug && (rawPath.includes('[...slug]') || rawPath.startsWith('/api/index') || rawPath === '/api' || !rawPath.startsWith('/api/'))) {
+      const slug = Array.isArray(req.query.slug) ? req.query.slug.join('/') : req.query.slug;
+      rawPath = `/api/${slug}`;
+    } else if (rawPath.startsWith('/api/index.js') || rawPath.startsWith('/api/index') || rawPath === '/api') {
       if (req.headers?.['x-matched-path']) {
         rawPath = req.headers['x-matched-path'];
       } else if (req.query?.slug) {

@@ -18,7 +18,7 @@ const PRODUCTS_DATA = {
     shortName: 'Chilli Powder',
     hindi: 'लाल मिर्च पाउडर • High Capsaicin',
     category: 'essentials',
-    image: '/assets/chilli-powder.jpg',
+    image: '/assets/chilli-powder-portrait.webp',
     odooId: 20, // Odoo Product: Chilli powder (ID: 20)
     variants: {
       '100g': { weight: '100g', price: 45, mrp: 60, discount: '25%', label: 'Trial' },
